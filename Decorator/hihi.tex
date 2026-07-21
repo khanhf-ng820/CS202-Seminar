@@ -1,0 +1,1503 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{cppstyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    numbers=left,
+    numbersep=5pt,
+    tabsize=2,
+    language=C++
+}
+
+\lstset{style=cppstyle}
+
+\title{Decorator Design Pattern}
+\author{}
+\date{}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Agenda}
+
+\tableofcontents
+
+\end{frame}
+
+\section{Motivation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{1. A Real-world Problem}
+
+Imagine your team is building an order management software for a coffee shop chain (e.g., The Coffee House).
+
+Available coffee:
+
+\begin{itemize}
+\item Dark Roast
+\item House Blend
+\item Espresso
+\end{itemize}
+
+Customers rarely order plain coffee.
+
+They often request additional condiments:
+
+\begin{itemize}
+\item Milk
+\item Sugar
+\item Caramel
+\end{itemize}
+
+Each topping changes
+
+\begin{itemize}
+\item Price
+\item Description
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Naive Solution}
+
+\begin{frame}{2. Naive Solution - Inheritance}
+
+The first idea is using inheritance.
+
+\bigskip
+
+Example:
+
+\begin{itemize}
+
+\item Beverage
+
+\item DarkRoast
+
+\item DarkRoastWithMilk
+
+\item DarkRoastWithMilkAndSugar
+
+\item DarkRoastWithMilkAndSugarAndWhip
+
+\item EspressoWithWhip
+
+\item HouseBlendWithMilk
+
+\item ...
+
+\end{itemize}
+
+\pause
+
+\begin{alertblock}{Problem}
+
+Every combination requires a new class.
+
+\end{alertblock}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Naive Solution - Boolean Flags}
+
+Another approach is storing every topping inside the Beverage class.
+
+\bigskip
+
+\begin{lstlisting}
+class Beverage {
+
+private:
+
+    bool hasMilk;
+    bool hasSugar;
+    bool hasWhip;
+    bool hasCaramel;
+
+public:
+    ...
+};
+\end{lstlisting}
+
+\pause
+
+Everything is controlled by boolean variables.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Problems}
+
+\begin{frame}{3. Problems with the Naive Solution}
+
+\begin{block}{Class Explosion}
+
+4 coffee types × many toppings = dozens (or hundreds) of subclasses.
+
+\end{block}
+
+\pause
+
+\begin{block}{Hard Maintenance}
+
+Changing the price of milk requires modifying many classes.
+
+\end{block}
+
+\pause
+
+\begin{block}{Violates Open/Closed Principle}
+
+Adding a new topping (e.g. Boba)
+
+requires modifying Beverage.
+
+\end{block}
+
+\pause
+
+\begin{block}{No Runtime Flexibility}
+
+Cannot naturally support
+
+\begin{itemize}
+\item Double Milk
+\item Triple Mocha
+\item Dynamic combinations
+\end{itemize}
+
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Decorator Pattern}
+
+\begin{frame}{4. Decorator Pattern}
+
+Decorator is a \textbf{Structural Design Pattern}.
+
+\bigskip
+
+Instead of inheritance,
+
+we dynamically attach new behaviors to an object.
+
+\bigskip
+
+Core philosophy:
+
+\begin{center}
+
+\Huge
+Composition over Inheritance
+
+\end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Core Concepts}
+
+Decorator uses wrapper objects.
+
+\bigskip
+
+\begin{center}
+
+Coffee
+
+$\uparrow$
+
+Milk Decorator
+
+$\uparrow$
+
+Sugar Decorator
+
+$\uparrow$
+
+Mocha Decorator
+
+\end{center}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Class Diagram}
+
+\begin{frame}{5. General Structure of Decorator Pattern}
+
+\begin{block}{Main Components}
+
+\begin{itemize}
+
+\item \textbf{Component}: Common interface for all objects.
+
+\item \textbf{ConcreteComponent}: The original object.
+
+\item \textbf{Decorator}: Abstract wrapper containing a Component.
+
+\item \textbf{ConcreteDecorator}: Adds new behavior while preserving the interface.
+
+\end{itemize}
+
+\end{block}
+
+Flow:
+
+\[
+Component
+\leftarrow
+Decorator
+\leftarrow
+Decorator
+\leftarrow
+Decorator
+\]
+
+Every decorator is still recognized as a Component.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Coffee UML (Mermaid)}
+
+\small
+
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{diagram.jpg}
+\caption{Coffee UML diagram}
+\end{figure}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation}
+
+\begin{frame}[fragile]{7. Component}
+
+\begin{lstlisting}
+class Beverage {
+public:
+    virtual string getDescription() const = 0;
+    virtual double cost() const = 0;
+    virtual ~Beverage() = default;
+};
+\end{lstlisting}
+
+\pause
+
+\begin{block}{Role}
+
+Defines the common interface.
+Every coffee and every topping must inherit from Beverage.
+
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Concrete Component}
+
+\begin{lstlisting}
+class DarkRoast : public Beverage {
+public:
+    string getDescription() const override {
+        return "Dark Roast Coffee";
+    }
+
+    double cost() const override {
+        return 30.0;
+    }
+};
+\end{lstlisting}
+
+\pause
+
+DarkRoast is the original object before decoration.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Base Decorator}
+
+\begin{lstlisting}
+class CondimentDecorator : public Beverage {
+protected:
+    Beverage* beverage;
+public:
+    CondimentDecorator(Beverage* bev) : beverage(bev) {}
+
+    virtual ~CondimentDecorator() {
+        delete beverage;
+    }
+};
+\end{lstlisting}
+
+\pause
+The decorator wraps another Beverage object.
+
+Every decorator stores a pointer to another Beverage.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{Concrete Decorator: Milk}
+
+\begin{lstlisting}
+class Milk : public CondimentDecorator {
+public:
+    Milk(Beverage* bev) : CondimentDecorator(bev) {}
+
+    string getDescription() const override {
+        return beverage->getDescription() + ", Milk";
+    }
+
+    double cost() const override {
+        return beverage->cost() + 5.0;
+    }
+};
+\end{lstlisting}
+
+\pause
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Concrete Decorator: Mocha}
+
+\begin{lstlisting}
+class Mocha : public CondimentDecorator {
+public:
+    Mocha(Beverage* bev) : CondimentDecorator(bev) {}
+    string getDescription() const override { return beverage->getDescription() + ", Mocha";
+    }
+
+    double cost() const override {
+        return beverage->cost() + 8.0;
+    }
+};
+\end{lstlisting}
+
+\pause
+
+Every new decorator extends the previous Beverage.
+
+No existing class needs modification.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Client Code}
+
+\begin{lstlisting}
+int main() {
+    Beverage* myDrink = new DarkRoast();
+
+    myDrink = new Milk(myDrink);
+    myDrink = new Mocha(myDrink);
+
+    cout << myDrink->getDescription() << endl;
+    cout << myDrink->cost();
+    delete myDrink;
+}
+\end{lstlisting}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{How Decoration Works}
+
+The object is wrapped layer by layer.
+
+\bigskip
+
+\[
+DarkRoast
+\]
+
+\[
+\Uparrow
+\]
+
+\[
+Milk(DarkRoast)
+\]
+
+\[
+\Uparrow
+\]
+
+\[
+Mocha(Milk(DarkRoast))
+\]
+
+\pause
+
+Every wrapper is still a Beverage.
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Execution Flow}
+
+Calling
+
+\[
+myDrink->cost()
+\]
+
+starts from the outermost decorator.
+
+\bigskip
+
+Execution order:
+
+\[
+Mocha
+\rightarrow
+Milk
+\rightarrow
+DarkRoast
+\]
+
+Then the values are returned back.
+
+\[
+8
++5
++30
+=
+43
+\]
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Program Output}
+
+\Large
+
+Description
+
+\[
+\boxed{
+Dark\ Roast\ Coffee,\ Milk,\ Mocha
+}
+\]
+
+Total Cost
+
+\[
+\boxed{43k\ VND}
+\]
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Advantages and Disadvantages}
+
+\begin{frame}{Advantages}
+
+\begin{block}{Runtime Flexibility}
+
+Features can be added dynamically while the program is running.
+
+\end{block}
+
+\pause
+
+\begin{block}{Unlimited Combinations}
+
+Supports any topping combination without creating new subclasses.
+
+\end{block}
+
+\pause
+
+\begin{block}{Reusable Components}
+
+Each decorator can be reused independently.
+
+\end{block}
+
+\pause
+
+\begin{block}{Follows SOLID}
+
+\begin{itemize}
+
+\item Single Responsibility Principle
+
+\item Open/Closed Principle
+
+\end{itemize}
+
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Disadvantages}
+
+\begin{block}{Many Small Classes}
+
+Each feature requires its own decorator class.
+
+\end{block}
+
+\pause
+
+\begin{block}{Harder Debugging}
+
+Many wrapper layers produce long call stacks.
+
+\end{block}
+
+\pause
+
+\begin{block}{Complex Initialization}
+
+Nested construction may become difficult.
+
+Example:
+
+\[
+new\ Mocha(
+new\ Milk(
+new\ Mocha(
+new\ DarkRoast())))
+\]
+
+\end{block}
+
+\end{frame}
+
+\section{Other Patterns}
+
+\begin{frame}{Strategy Pattern}
+    \begin{block}{Core Idea}
+        Encapsulate different algorithms behind a common interface
+        and allow them to be switched at runtime.
+    \end{block}
+
+    \begin{itemize}
+        \item One task $\rightarrow$ Multiple possible algorithms
+        \item Each algorithm is implemented in a separate class
+        \item The algorithm can be changed dynamically at runtime
+        \item Avoids large \texttt{if-else} or \texttt{switch-case} blocks
+    \end{itemize}
+
+    \textbf{Example:} A graph visualizer supporting multiple pathfinding algorithms.
+\end{frame}
+
+%=========================================================
+\begin{frame}[fragile]{The Problem: Without Strategy}
+
+\begin{lstlisting}
+class GraphVisualizer {
+public:
+    void RunPathfinding(string algoType) {
+        if (algoType == "Dijkstra") {
+        }
+        else if (algoType == "BellmanFord") {
+        }
+        else if (algoType == "BFS") {
+        }
+    }
+};
+\end{lstlisting}
+
+\begin{alertblock}{Problems}
+    \begin{itemize}
+        \item The class becomes very large and difficult to maintain
+        \item Adding a new algorithm requires modifying existing code
+        \item High risk of introducing bugs
+        \item Violates the Open-Closed Principle
+    \end{itemize}
+\end{alertblock}
+
+\end{frame}
+
+%=========================================================
+\begin{frame}[fragile]{The Solution: Strategy Pattern}
+
+\begin{lstlisting}
+class IPathfindingStrategy {
+public:
+    virtual void ExecuteAlgorithm() = 0;
+    virtual ~IPathfindingStrategy() {}
+};
+\end{lstlisting}
+
+\begin{block}{Common Interface}
+    Every pathfinding algorithm follows the same contract.
+\end{block}
+
+\begin{itemize}
+    \item \texttt{DijkstraStrategy}
+    \item \texttt{BellmanFordStrategy}
+    \item \texttt{BFSStrategy}
+    \item \texttt{...}
+\end{itemize}
+
+Each algorithm is encapsulated in its own class.
+The main application does not need to know the implementation details.
+\end{frame}
+
+%=========================================================
+\begin{frame}[fragile]{Concrete Strategies}
+
+\begin{lstlisting}
+class DijkstraStrategy : public IPathfindingStrategy {
+public:
+    void ExecuteAlgorithm() override { // Dijkstra's algorithm
+    }
+};
+
+class BellmanFordStrategy : public IPathfindingStrategy {
+public:
+    void ExecuteAlgorithm() override { // Bellman-Ford algorithm
+    }
+};
+\end{lstlisting}
+
+\begin{block}{Key Idea}
+    Different algorithms are interchangeable because
+    they implement the same interface.
+\end{block}
+
+\end{frame}
+
+%=========================================================
+\begin{frame}[fragile]{Context: Graph Visualizer}
+
+\begin{lstlisting}
+class GraphVisualizer {
+private:
+    IPathfindingStrategy* strategy;
+public:
+    void SetStrategy(IPathfindingStrategy* s) {
+        strategy = s;
+    }
+    void Run() {
+        if (strategy)
+            strategy->ExecuteAlgorithm();
+    }
+};
+\end{lstlisting}
+
+\begin{block}{Context}
+    The \texttt{GraphVisualizer} does not care which algorithm is used.
+    It simply executes the selected strategy.
+\end{block}
+
+\end{frame}
+
+%=========================================================
+\begin{frame}[fragile]{Switching Strategies at Runtime}
+
+\begin{lstlisting}
+GraphVisualizer app;
+
+// User selects Dijkstra
+app.SetStrategy(new DijkstraStrategy());
+app.Run();
+
+// User switches to Bellman-Ford
+app.SetStrategy(new BellmanFordStrategy());
+app.Run();
+\end{lstlisting}
+
+\begin{alertblock}{Result}
+    The algorithm changes, but the \texttt{GraphVisualizer} code
+    remains unchanged.
+\end{alertblock}
+
+\end{frame}
+
+%=========================================================
+\begin{frame}{Strategy Pattern: Summary}
+
+\begin{center}
+    \Large
+    \textbf{One task, multiple interchangeable algorithms}
+\end{center}
+
+\begin{itemize}
+    \item Encapsulate each algorithm separately
+    \item Use a common interface
+    \item Switch algorithms at runtime
+    \item Reduce complex conditional logic
+    \item Easy to extend with new strategies
+\end{itemize}
+
+\begin{block}{Main Benefit}
+    Add a new algorithm without modifying the existing context.
+\end{block}
+
+\end{frame}
+
+
+%=========================================================
+\section{Facade Pattern}
+
+\begin{frame}{Facade Pattern}
+
+    \begin{block}{Core Idea}
+        Provide a simple, unified interface to a complex subsystem.
+    \end{block}
+
+    \begin{center}
+        \Large
+        \textbf{Complex System}
+        $\quad\longrightarrow\quad$
+        \textbf{Simple Interface}
+    \end{center}
+
+    \begin{itemize}
+        \item Hide unnecessary implementation details
+        \item Reduce the complexity seen by the client
+        \item Provide a single entry point to a subsystem
+    \end{itemize}
+
+    \textbf{Example:} Starting a computer by pressing the power button.
+\end{frame}
+
+%=========================================================
+\begin{frame}[fragile]{The Problem: A Complex Subsystem}
+
+\begin{lstlisting}
+class CPU {
+public:
+    void Freeze() {}
+    void Jump(long position) {}
+    void Execute() {}
+};
+class Memory {
+public:
+    void Load(long position, char* data) {}
+};
+class HardDrive {
+public:
+    char* Read(long lba, int size) {
+        return "OS data";
+    }
+};
+\end{lstlisting}
+\end{frame}
+
+%=========================================================
+\begin{frame}{The Problem: A Complex Subsystem (cont.)}
+\begin{block}{Problem}
+    Starting a computer requires coordinating multiple components:
+    CPU, RAM, and Hard Drive.
+\end{block}
+
+\end{frame}
+
+%=========================================================
+\begin{frame}[fragile]{The Solution: Computer Facade}
+
+\begin{lstlisting}
+class ComputerFacade {
+private:
+    CPU cpu;
+    Memory ram;
+    HardDrive hdd;
+
+public:
+    void StartComputer() {
+        cpu.Freeze();
+        ram.Load(0x00, hdd.Read(0, 1024));
+        cpu.Jump(0x00);
+        cpu.Execute();
+    }
+};
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Facade Pattern}
+\begin{block}{Facade}
+    \texttt{ComputerFacade} hides the complex startup process
+    behind a single method: \texttt{StartComputer()}.
+\end{block}
+\end{frame}
+
+
+%=========================================================
+\begin{frame}[fragile]{Client: Simple Interface}
+
+\begin{lstlisting}
+int main() {
+    ComputerFacade myPC;
+
+    // Press the power button
+    myPC.StartComputer();
+
+    return 0;
+}
+\end{lstlisting}
+
+\begin{center}
+    \Large
+    \textbf{One method call. That's it.}
+\end{center}
+
+\begin{itemize}
+    \item The client does not interact directly with CPU, RAM, or HDD
+    \item Internal complexity is hidden
+    \item The client only depends on the Facade
+\end{itemize}
+
+\end{frame}
+
+%=========================================================
+\begin{frame}{Facade Pattern: Real-World Analogy}
+
+\begin{center}
+    \Large
+    \textbf{Press the Power Button}
+\end{center}
+
+\begin{center}
+    \texttt{StartComputer()}
+\end{center}
+
+\begin{itemize}
+    \item CPU initialization
+    \item Loading data from the Hard Drive
+    \item Loading data into Memory
+    \item Starting CPU execution
+\end{itemize}
+
+\begin{block}{The User}
+    Only needs to press one button.
+    They do not need to understand how the internal components work together.
+\end{block}
+
+\end{frame}
+
+%=========================================================
+\section{Relationships with Other Design Patterns}
+
+\begin{frame}{Relationships with Other Design Patterns}
+
+\begin{center}
+    \Large
+    \textbf{Decorator, Facade, and Strategy solve different problems}
+\end{center}
+
+\vspace{0.5cm}
+
+\begin{columns}[T]
+
+% Decorator
+\column{0.32\textwidth}
+\begin{block}{Decorator}
+    \centering
+    \textbf{Add Behavior}
+    
+    \vspace{0.3cm}
+    
+    Extends an object's functionality
+    without modifying its original class.
+\end{block}
+
+% Facade
+\column{0.32\textwidth}
+\begin{block}{Facade}
+    \centering
+    \textbf{Hide Complexity}
+    
+    \vspace{0.3cm}
+    
+    Provides a simple interface
+    to a complex subsystem.
+\end{block}
+
+% Strategy
+\column{0.32\textwidth}
+\begin{block}{Strategy}
+    \centering
+    \textbf{Change Behavior}
+    
+    \vspace{0.3cm}
+    
+    Allows different algorithms
+    to be switched at runtime.
+\end{block}
+
+\end{columns}
+
+\vspace{0.6cm}
+
+\begin{center}
+    \Large
+    \textbf{Decorator} $\rightarrow$ \textit{What can I add?}
+    
+    \textbf{Facade} $\rightarrow$ \textit{How can I simplify access?}
+    
+    \textbf{Strategy} $\rightarrow$ \textit{How can I change the algorithm?}
+\end{center}
+
+\end{frame}
+
+
+%=========================================================
+\begin{frame}{Decorator, Facade, and Strategy}
+
+\begin{center}
+\begin{tabular}{|p{2.8cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+\textbf{Pattern} & \textbf{Main Purpose} & \textbf{Key Question} \\
+\hline
+
+\textbf{Decorator}
+&
+Add or extend behavior
+&
+\textit{How can I add functionality?}
+\\
+\hline
+
+\textbf{Facade}
+&
+Simplify access to a complex system
+&
+\textit{How can I make the system easier to use?}
+\\
+\hline
+
+\textbf{Strategy}
+&
+Switch between different algorithms
+&
+\textit{How can I change the way a task is performed?}
+\\
+\hline
+
+\end{tabular}
+\end{center}
+
+\vspace{0.6cm}
+
+\begin{block}{The Big Picture}
+    All three patterns help reduce coupling and improve flexibility,
+    but they focus on different aspects of software design.
+\end{block}
+
+\end{frame}
+
+
+%=========================================================
+\begin{frame}{How They Can Work Together}
+
+\begin{center}
+    \Large
+    \textbf{Example: A Pathfinding System}
+\end{center}
+
+\begin{block}{Solution}
+    The client calls one simple method through the Facade.
+    The Strategy selects the pathfinding algorithm,
+    while Decorators add extra functionality.
+\end{block}
+
+\end{frame}
+
+
+%=========================================================
+\begin{frame}{Summary}
+
+\begin{center}
+
+\vspace{0.5cm}
+
+\Large
+\textbf{Decorator}
+\\
+\large
+Adds new behavior to an object.
+
+\vspace{0.5cm}
+
+\textbf{Facade}
+\\
+\large
+Hides system complexity behind a simple interface.
+
+\vspace{0.5cm}
+
+\textbf{Strategy}
+\\
+\large
+Allows different algorithms to be exchanged easily.
+
+\vspace{0.8cm}
+
+\begin{block}{Key Takeaway}
+\centering
+\textbf{
+Decorator adds behavior,
+Facade simplifies access,
+Strategy changes behavior.
+}
+\end{block}
+
+\end{center}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Real-world Applications}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOMAIN 1: JAVA I/O STREAMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{9. Real-World Applications: Java I/O Streams}
+
+\begin{block}{Conceptual Background}
+In the \texttt{java.io} package, reading data can originate from multiple sources (files, network sockets, byte arrays) and require various processing capabilities (buffering, decompression, data parsing). Creating subclass combinations like \texttt{BufferedGzipFileInputStream} would cause severe class explosion.
+\end{block}
+
+\pause
+
+\begin{block}{GoF Design Pattern Mapping}
+\begin{itemize}
+    \item \textbf{Component}: \texttt{InputStream} (Abstract base interface defining \texttt{read()})
+    \item \textbf{Concrete Component}: \texttt{FileInputStream} (Reads raw bytes directly from a file)
+    \item \textbf{Base Decorator}: \texttt{FilterInputStream} (Holds an internal \texttt{InputStream} reference)
+    \item \textbf{Concrete Decorators}: \texttt{BufferedInputStream}, \texttt{GZIPInputStream} (Add buffering and decompression)
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Java I/O Streams: Execution Flow}
+
+\begin{lstlisting}[language=Java]
+// Base file reader wrapped with buffering and GZIP decompression
+InputStream fileStream = new FileInputStream("data.txt.gz");
+InputStream bufferedStream = new BufferedInputStream(fileStream);
+InputStream gzipStream = new GZIPInputStream(bufferedStream);
+
+int data = gzipStream.read(); // Execution propagates down through wrappers
+\end{lstlisting}
+
+\pause
+
+\begin{block}{How Decoration Works at Runtime}
+\begin{enumerate}
+    \item The client calls \texttt{read()} on the outermost decorator (\texttt{GZIPInputStream}).
+    \item \texttt{GZIPInputStream} requests raw compressed chunks from \texttt{BufferedInputStream}.
+    \item \texttt{BufferedInputStream} fetches byte blocks from \texttt{FileInputStream}.
+    \item Data flows back up through the stack, being buffered and decompressed dynamically!
+\end{enumerate}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOMAIN 2: BACKEND MIDDLEWARE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Backend Web Middleware}
+
+\begin{block}{Architectural Problem}
+Modern backend frameworks (Express.js, ASP.NET Core, Spring Filters) must process incoming HTTP requests with cross-cutting concerns like authentication, CORS headers, logging, and error handling before reaching the final controller.
+\end{block}
+
+\pause
+
+\begin{block}{The Middleware Wrapper Concept}
+Instead of polluting every controller endpoint with repetitive security checks, middleware functions act as an onion-skin wrapper stack around the business logic controller.
+\end{block}
+
+\begin{center}
+\small
+\texttt{Request} $\rightarrow$ \boxed{\text{Logger}} $\rightarrow$ \boxed{\text{AuthCheck}} $\rightarrow$ \boxed{\text{CorsHeader}} $\rightarrow$ \texttt{Controller}
+\end{center}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Backend Middleware: Code \& Delegation}
+
+\begin{lstlisting}[language=C++]
+// Conceptual Express.js / ASP.NET Middleware Stack
+void AuthMiddleware(Request req, Response res, NextFunction next) {
+    if (!req.hasValidToken()) {
+        res.sendError(401, "Unauthorized");
+        return; // Intercept execution early
+    }
+    next(); // Pass control to the next decorated layer in the pipeline
+}
+\end{lstlisting}
+
+\pause
+
+\begin{block}{Why Decorator Pattern Fits Here}
+\begin{itemize}
+    \item \textbf{Dynamic Stacking}: Middleware layers can be added or removed per route without modifying the target route controller.
+    \item \textbf{Pre/Post Processing}: A middleware layer can execute code both \textit{before} calling \texttt{next()} and \textit{after} \texttt{next()} returns (e.g., measuring response latency).
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOMAIN 3: PYTHON DECORATORS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Python Decorators}
+
+\begin{block}{Native Language Support}
+Python integrates the Decorator pattern directly into its language syntax via the \texttt{@decorator\_name} annotation. In Python, functions are first-class objects, allowing higher-order functions to wrap target callables dynamically.
+\end{block}
+
+\pause
+
+\begin{block}{Syntactic Sugar Mechanism}
+Writing an annotation in Python:
+\begin{center}
+\texttt{@login\_required}\\
+\texttt{def view\_dashboard(): ...}
+\end{center}
+is exact syntactic sugar for wrapping the function object at definition time:
+\begin{center}
+\texttt{view\_dashboard = login\_required(view\_dashboard)}
+\end{center}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Python Decorators: Practical Implementation}
+
+\begin{lstlisting}[language=Python]
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            raise PermissionError("User must log in to view page")
+        return func(*args, **kwargs) # Delegate to original function
+    return wrapper
+
+@login_required
+def view_dashboard():
+    return "Secret User Dashboard Data"
+\end{lstlisting}
+
+\pause
+
+\begin{block}{Key Takeaway}
+The \texttt{login\_required} wrapper adds authentication checks dynamically without modifying a single line of code inside \texttt{view\_dashboard()}.
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOMAIN 4: REACT HIGHER-ORDER COMPONENTS (HOC)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{React Higher-Order Components (HOC)}
+
+\begin{block}{UI Component Decoration}
+In modern web frontend development with React, user interface components should focus on rendering layout. Cross-cutting UI concerns (such as authorization checks, global theme injection, or data fetching) are attached using Higher-Order Components.
+\end{block}
+
+\pause
+
+\begin{block}{GoF Structural Mapping in React}
+\begin{itemize}
+    \item \textbf{Component}: Base React Component (\texttt{UserProfilePage})
+    \item \textbf{Decorator HOC}: Wrapper function (\texttt{withAuth}) returning an enhanced Component
+    \item \textbf{Concrete Result}: \texttt{withAuth(UserProfilePage)}
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{React HOC: Code \& Composition}
+
+\begin{lstlisting}[language=Java]
+// React Higher-Order Component Wrapper Example
+const withAuth = (WrappedComponent) => {
+    return (props) => {
+        if (!props.isAuthenticated) {
+            return <LoginPage />;
+        }
+        return <WrappedComponent {...props} />;
+    };
+};
+
+// Usage: Create an authenticated view without touching UserProfilePage source code
+const ProtectedProfile = withAuth(UserProfilePage);
+\end{lstlisting}
+
+\pause
+
+\begin{block}{Benefit}
+Multiple HOC decorators can be composed: \texttt{withTheme(withAuth(UserProfilePage))}, giving UI components modular, reusable capabilities.
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOMAIN 5: FLUTTER WIDGET COMPOSITION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Flutter Widget Trees}
+
+\begin{block}{Composition Over Inheritance in Mobile UI}
+Google's Flutter framework completely abandons traditional subclassing for UI elements. Instead of creating a \texttt{PaddedBorderedText} subclass, Flutter adopts the philosophy: \textbf{"Everything is a Widget"}.
+\end{block}
+
+\pause
+
+\begin{block}{Visual Decorator Tree}
+Base content is decorated visually by nesting wrapper widgets layer by layer:
+\begin{center}
+\texttt{Container} (Adds background color \& border)\\
+$\uparrow$\\
+\texttt{Padding} (Adds outer spacing)\\
+$\uparrow$\\
+\texttt{Text("Hello CS202")} (Base visual component)
+\end{center}
+\end{block}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Flutter Widgets: Code \& Render Pipeline}
+
+\begin{lstlisting}[language=Java]
+// Flutter UI composition via nested decorator widgets
+Widget build(BuildContext context) {
+    return Container(
+        color: Colors.blue,
+        child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text("Hello CS202 Seminar"),
+        ),
+    );
+}
+\end{lstlisting}
+
+\pause
+
+\begin{block}{Render Execution Flow}
+During rendering, Flutter passes layout constraints down through the \texttt{Container} and \texttt{Padding} wrappers to the inner \texttt{Text} child. The computed pixel dimensions return back up the tree—exactly mirroring how decorator cost calculations bubble up in object wrapping!
+\end{block}
+
+\end{frame}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mini Quiz}
+
+\begin{frame}{Question 1}
+
+Decorator belongs to which Design Pattern category?
+
+\bigskip
+
+A. Creational
+
+B. Structural
+
+C. Behavioral
+
+D. Architectural
+
+\pause
+
+\begin{alertblock}{Answer}
+
+B. Structural
+
+\end{alertblock}
+
+Prize: Sweet Candy
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Question 2}
+
+Which design principle does Decorator emphasize?
+
+\bigskip
+
+A. Inheritance over Composition
+
+B. Composition over Inheritance
+
+C. Tight Coupling
+
+D. Procedural Programming
+
+\pause
+
+\begin{alertblock}{Answer}
+
+B. Composition over Inheritance
+
+\end{alertblock}
+
+Prize: Cake
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Question 3}
+
+What is the main purpose of Decorator?
+
+\bigskip
+
+A. Clone an object
+
+B. Restrict object creation
+
+C. Add new behavior at Runtime
+
+D. Simplify a subsystem
+
+\pause
+
+\begin{alertblock}{Answer}
+
+C. Add new behavior at Runtime
+
+\end{alertblock}
+
+Prize: Virtual Hug
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Question 4}
+
+Which is a disadvantage of Decorator?
+
+\bigskip
+
+A. Violates OCP
+
+B. Causes Class Explosion
+
+C. Long call stack and many small classes
+
+D. Cannot work in OOP languages
+
+\pause
+
+\begin{alertblock}{Answer}
+
+C
+
+\end{alertblock}
+
+Prize: Chocolate
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Question 6}
+
+How do we implement Double Milk?
+
+\bigskip
+
+A. Create DoubleMilkDecorator
+
+B. Add count = 2
+
+C. Wrap Milk twice
+
+D. Copy the code twice
+
+\pause
+
+\begin{alertblock}{Answer}
+
+C
+
+\end{alertblock}
+
+Prize: Bubble Milk Tea
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}
+
+\centering
+
+\Huge
+
+Thank You!
+
+Questions?
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
