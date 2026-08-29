@@ -6,9 +6,17 @@ xcolor.sty
 .DS_Store
 .npm-cache/
 
-AGENTS.md
+.agents/
 opencode.json
 /Decorator/TRANSCRIPT.md
 /Decorator/TRANSCRIPT.pdf
 /TRANSCRIPT.md
 /TRANSCRIPT.pdf
+
+# Compiled Binaries
+coffee_naive
+coffee_decorator
+theater_naive
+theater_facade
+nav_naive
+nav_strategy
