@@ -1,0 +1,1947 @@
+\documentclass[11pt,a4paper]{report}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T5,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese,english]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.multipart}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+
+\definecolor{usblue}{HTML}{174A7E}
+\definecolor{codegreen}{HTML}{287A3D}
+\definecolor{codegray}{HTML}{F4F5F7}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\tikzset{
+  umlclass/.style={
+    draw,
+    rectangle split,
+    rectangle split parts=3,
+    rectangle split part align={center,left,left},
+    align=left,
+    inner sep=3pt,
+    font=\scriptsize
+  },
+  umlassociation/.style={draw,-{Latex[length=2.6mm]}},
+  umldependency/.style={draw,dashed,-{Latex[length=2.6mm]}},
+  umlrealization/.style={
+    draw,dashed,-{Triangle[open,length=2.8mm,width=3.8mm]}
+  },
+  umlaggregation/.style={
+    draw,{Diamond[open,length=2.8mm,width=3.8mm]}-{Latex[length=2.6mm]}
+  },
+  umllabel/.style={fill=white,inner sep=1.5pt,font=\scriptsize}
+}
+
+\lstdefinestyle{cpp}{
+  language=C++,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codegray},
+  keywordstyle=\color{usblue}\bfseries,
+  commentstyle=\color{codegreen},
+  stringstyle=\color{purple},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  frame=single,
+  rulecolor=\color{gray!35},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2
+}
+
+\setlist{nosep}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{CS202 --- Programming Systems}
+\fancyhead[R]{OOP Design Patterns}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+
+\begin{titlepage}
+  \centering
+  {\Large\bfseries VIETNAM NATIONAL UNIVERSITY\par}
+  \vspace{0.35cm}
+  {\Large\bfseries HO CHI MINH CITY UNIVERSITY OF SCIENCE\par}
+  \vspace{2.2cm}
+  {\color{usblue}\rule{\textwidth}{1.2pt}\par}
+  \vspace{0.65cm}
+  {\Huge\bfseries SEMINAR REPORT\par}
+  \vspace{0.4cm}
+  {\LARGE\bfseries Object-Oriented Design Patterns\par}
+  \vspace{0.65cm}
+  {\color{usblue}\rule{\textwidth}{1.2pt}\par}
+
+  \vfill
+  \begin{tabular}{rl}
+    \textbf{Course:} & Programming Systems --- CS202 \\
+    \textbf{Class:} & 25A02 \\
+    \textbf{Group ID:} & 53 \\
+    \textbf{Seminar topics:} & Decorator, Facade, and Strategy \\
+    \textbf{Institution:} & University of Science, VNU-HCM \\
+  \end{tabular}
+
+  \vfill
+  {\large Ho Chi Minh City, August 2026\par}
+\end{titlepage}
+
+\hypersetup{pageanchor=true}
+\pagenumbering{roman}
+\chapter*{Seminar Group Members}
+\addcontentsline{toc}{chapter}{Seminar Group Members}
+
+The seminar is prepared by Group 53, consisting of two members with
+complementary responsibilities, contributing equally (50\% / 50\%) to the final submission.
+
+\section*{Member 1}
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+\textbf{Name} & \foreignlanguage{vietnamese}{Từ Hoàng Anh} \\
+\textbf{Student ID} & 25125005 \\
+\textbf{Primary role} & Research and Implementation Lead \\
+\textbf{Responsibilities} & Research design pattern theory and literature, develop and test concrete C++ code implementations for Decorator, Strategy, and Facade, and coordinate the oral seminar presentation. \\
+\textbf{Contribution} & 50\% \\
+\bottomrule
+\end{tabularx}
+
+\section*{Member 2}
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+\textbf{Name} & \foreignlanguage{vietnamese}{Nguyễn Phúc Khánh} \\
+\textbf{Student ID} & 25125086 \\
+\textbf{Primary role} & Documentation and Presentation Lead \\
+\textbf{Responsibilities} & Organize and structure the LaTeX seminar report, design presentation slides (PPT), manage citations, prepare multiple-choice quizzes, verify UML class diagrams, and prepare technical demonstrations. \\
+\textbf{Contribution} & 50\% \\
+\bottomrule
+\end{tabularx}
+
+Both members thoroughly reviewed the complete report and source code, rehearsed the presentation, and contributed equally to the Q\&A preparation.
+
+\clearpage
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+This report presents three Gang of Four object-oriented design patterns:
+\emph{Decorator}, \emph{Strategy}, and \emph{Facade}. For each pattern, the
+report begins with a practical software-design problem, examines a naive
+implementation, introduces the pattern's intent and participants, and then
+discusses a C++-oriented implementation. The report also evaluates benefits,
+limitations, and real-world uses. Together, the patterns demonstrate three
+different uses of object composition: dynamically adding responsibilities,
+interchanging algorithms, and simplifying access to a complex subsystem.
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+\section{Background}
+Object-oriented programming provides encapsulation, inheritance, and
+polymorphism, but these mechanisms alone do not guarantee maintainable design.
+As systems grow, recurring problems appear: behavior must be extended without
+creating many subclasses, algorithms must change without rewriting a context,
+and clients must interact with complicated subsystems without depending on all
+their details. Design patterns record reusable structures for addressing such
+problems.
+
+The Gang of Four catalogue groups patterns into three categories:
+\begin{itemize}
+  \item \textbf{Creational patterns} control object creation.
+  \item \textbf{Structural patterns} organize classes and objects.
+  \item \textbf{Behavioral patterns} organize responsibilities and interaction.
+\end{itemize}
+
+Decorator and Facade are structural patterns, while Strategy is behavioral.
+The seminar emphasizes the principle \emph{favor composition over inheritance}
+and relates each pattern to the SOLID principles.
+
+\section{Objectives and scope}
+The objectives of this seminar are to:
+\begin{enumerate}
+  \item recognize the design problems that motivate each pattern;
+  \item identify the participants and relationships in each pattern;
+  \item compare naive and pattern-based C++ designs;
+  \item evaluate benefits, limitations, and appropriate use cases; and
+  \item distinguish patterns that can appear structurally similar.
+\end{enumerate}
+
+The scope is limited to Decorator, Strategy, and Facade. The examples are
+educational implementations intended to make the object relationships clear;
+production systems would additionally require error handling, ownership rules,
+tests, and domain-specific behavior.
+
+\section{Method}
+Each pattern follows a problem-first layout: motivating example, naive solution,
+formal structure, C++ implementation, trade-offs, and applications.
+
+\chapter{Decorator Pattern}
+
+\section{Real-world problem: customizing coffee beverages}
+Point-of-sale (POS) systems for coffee shops must calculate prices and print descriptions for customized drinks. A beverage order begins with a base coffee and allows customers to add arbitrary combinations of condiments:
+\begin{itemize}
+  \item base beverages include \textbf{Espresso}, \textbf{Dark Roast}, \textbf{House Blend}, and \textbf{Decaf};
+  \item condiments include \textbf{Steamed Milk}, \textbf{Mocha} (chocolate), \textbf{Soy}, and \textbf{Whipped Cream};
+  \item customers may request multiple servings of the same condiment (for example, double mocha); and
+  \item condiment prices vary based on the specific add-on requested.
+\end{itemize}
+
+Constructing a beverage order requires a flexible workflow:
+\begin{enumerate}
+  \item select a base beverage with a default description and base cost;
+  \item wrap the beverage with a requested condiment, extending its description and adding the condiment's price;
+  \item repeat condiment additions dynamically as requested by the customer; and
+  \item compute the final bill by summing up costs through the decorated structure.
+\end{enumerate}
+
+Calculating the final cost dynamically without bloating the class hierarchy or hardcoding combinations into a base class is the core architectural challenge.
+
+\section{Naive solution without Decorator}
+A naive design relies purely on class inheritance, creating a distinct subclass for every possible combination of beverage and condiments:
+
+\begin{lstlisting}[style=cpp]
+// Naive approach 1: Subclass explosion
+class Espresso { public: double cost() { return 1.99; } };
+class EspressoWithMilk { public: double cost() { return 1.99 + 0.10; } };
+class EspressoWithMilkAndMocha { public: double cost() { return 1.99 + 0.10 + 0.20; } };
+class DarkRoastWithSoyAndWhip { public: double cost() { return 0.99 + 0.15 + 0.10; } };
+
+// Naive approach 2: Fat base class with boolean flags
+class Beverage {
+protected:
+    std::string description;
+    bool milk = false;
+    bool mocha = false;
+    bool soy = false;
+    bool whip = false;
+public:
+    virtual double cost() {
+        double total = 0.0;
+        if (hasMilk()) total += 0.10;
+        if (hasMocha()) total += 0.20;
+        if (hasSoy()) total += 0.15;
+        if (hasWhip()) total += 0.10;
+        return total;
+    }
+    bool hasMilk() const { return milk; }
+    void setMilk(bool m) { milk = m; }
+    // ... getter and setters for all other condiments ...
+};
+
+class DarkRoast : public Beverage {
+public:
+    DarkRoast() { description = "Dark Roast Coffee"; }
+    double cost() override { return 0.99 + Beverage::cost(); }
+};
+\end{lstlisting}
+
+While both approaches may compile and calculate costs, they introduce severe structural deficiencies as the system scales.
+
+\section{Problems in the naive design}
+\begin{enumerate}
+  \item \textbf{Class explosion.} Creating explicit subclasses for every beverage and condiment combination yields an exponential growth of classes ($O(2^n)$ for $n$ condiments), creating a maintenance nightmare.
+  \item \textbf{Open/Closed Principle violation.} Adding a new condiment (e.g., Caramel) requires modifying the base \texttt{Beverage} class and updating its \texttt{cost()} logic, risking breakage across all existing drinks.
+  \item \textbf{Rigid compile-time binding.} Subclassing binds behavior statically at compile time. Clients cannot add or remove condiments dynamically during runtime based on user interaction.
+  \item \textbf{Inability to support multiple portions.} A boolean flag approach cannot cleanly represent a customer ordering double Mocha or triple Whip without adding extra integer counters to the base class.
+  \item \textbf{Inappropriate inheritance.} Base beverages should not carry state or knowledge of every potential condiment that might ever be invented.
+\end{enumerate}
+
+\section{Pattern intent and applicability}
+Decorator is a \textbf{structural design pattern}. Its intent is to attach additional responsibilities to an object dynamically. Decorators provide a flexible alternative to subclassing for extending functionality~\cite{gof}. It is appropriate when:
+\begin{itemize}
+  \item responsibilities need to be added to individual objects dynamically and transparently without affecting other objects;
+  \item static inheritance is impractical due to class explosion or rigid hierarchies; or
+  \item responsibilities can be withdrawn dynamically at runtime.
+\end{itemize}
+
+Decorator achieves transparent extension because the decorator shares the same abstract interface as the component it decorates (both \textit{is-a} and \textit{has-a}). The client remains unaware of whether it is interacting with a raw component or a heavily decorated chain of wrappers.
+
+\section{General class structure}
+Figure~\ref{fig:decorator-general} shows the general structure of the Decorator pattern. The \texttt{Decorator} class implements the \texttt{Component} interface and maintains a reference to a \texttt{Component} instance, delegating requests to it while adding pre- or post-processing operations.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.92\textwidth}{!}{%
+  \begin{tikzpicture}
+    \node[umlclass, minimum width=3.6cm] (component) at (0,3.8) {
+      \textbf{Component}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + operation()*
+    };
+
+    \node[umlclass, minimum width=3.6cm] (concreteComponent) at (-4.2,0) {
+      \textbf{ConcreteComponent}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + operation()
+    };
+
+    \node[umlclass, minimum width=4.0cm] (decorator) at (4.2,0) {
+      \textbf{Decorator}
+      \nodepart{second}
+      - component: Component*
+      \nodepart{third}
+      + operation()
+    };
+
+    \node[umlclass, minimum width=3.6cm] (concreteDecoratorA) at (1.4,-3.4) {
+      \textbf{ConcreteDecoratorA}
+      \nodepart{second}
+      - addedState
+      \nodepart{third}
+      + operation()\\
+      + addedBehavior()
+    };
+
+    \node[umlclass, minimum width=3.6cm] (concreteDecoratorB) at (7.0,-3.4) {
+      \textbf{ConcreteDecoratorB}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + operation()
+    };
+
+    % Realization to Component (straight UP into component.south)
+    \draw[umlrealization] (concreteComponent.north) -- ++(0,1.3) -| ([xshift=-16pt]component.south);
+    \draw[umlrealization] (decorator.north) -- ++(0,1.3) -| ([xshift=16pt]component.south);
+
+    % Aggregation / Wraps (routed out to the right into component.east)
+    \draw[umlaggregation] (decorator.east) -- ++(1.6,0) |- (component.east);
+
+    % Concrete Decorators inherit Decorator (straight UP into decorator.south)
+    \draw[umlrealization] (concreteDecoratorA.north) -- ++(0,1.0) -| ([xshift=-16pt]decorator.south);
+    \draw[umlrealization] (concreteDecoratorB.north) -- ++(0,1.0) -| ([xshift=16pt]decorator.south);
+  \end{tikzpicture}%
+  }
+  \caption{General Decorator structure showing transparent wrapping and interface realization.}\label{fig:decorator-general}
+\end{figure}
+
+The primary participants are:
+\begin{itemize}
+  \item \textbf{Component}: defines the common interface for objects that can have responsibilities added to them dynamically;
+  \item \textbf{ConcreteComponent}: defines an object to which additional responsibilities can be attached;
+  \item \textbf{Decorator}: maintains a reference to a \texttt{Component} object and defines an interface that conforms to \texttt{Component}'s interface; and
+  \item \textbf{ConcreteDecorator}: adds responsibilities to the wrapped component by performing additional operations before or after delegating to the enclosed object.
+\end{itemize}
+
+\section{Coffee-beverage class structure}
+In Figure~\ref{fig:decorator-beverage}, \texttt{Beverage} serves as the abstract component. \texttt{Espresso} and \texttt{DarkRoast} are concrete components. \texttt{CondimentDecorator} inherits from \texttt{Beverage} and wraps an inner \texttt{Beverage} pointer. Concrete decorators like \texttt{Milk}, \texttt{Mocha}, and \texttt{Whip} override \texttt{getDescription()} and \texttt{cost()} to add their specific details and pricing.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}
+    \node[umlclass, minimum width=4.0cm] (beverage) at (0,3.8) {
+      \textbf{Beverage}
+      \nodepart{second}
+      \# description: string
+      \nodepart{third}
+      + getDescription(): string\\
+      + cost(): double*
+    };
+
+    \node[umlclass, minimum width=3.4cm] (espresso) at (-5.0,0) {
+      \textbf{Espresso}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + cost(): double
+    };
+
+    \node[umlclass, minimum width=3.4cm] (darkroast) at (-1.2,0) {
+      \textbf{DarkRoast}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + cost(): double
+    };
+
+    \node[umlclass, minimum width=4.2cm] (condiment) at (4.4,0) {
+      \textbf{CondimentDecorator}
+      \nodepart{second}
+      \# wrapped: Beverage*
+      \nodepart{third}
+      + getDescription(): string*\\
+      + cost(): double*
+    };
+
+    \node[umlclass, minimum width=3.6cm] (milk) at (-0.2,-3.4) {
+      \textbf{Milk}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + getDescription(): string\\
+      + cost(): double
+    };
+
+    \node[umlclass, minimum width=3.6cm] (mocha) at (4.4,-3.4) {
+      \textbf{Mocha}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + getDescription(): string\\
+      + cost(): double
+    };
+
+    \node[umlclass, minimum width=3.6cm] (whip) at (9.0,-3.4) {
+      \textbf{Whip}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + getDescription(): string\\
+      + cost(): double
+    };
+
+    % Realizations to Beverage (all enter beverage.south going straight UP)
+    \draw[umlrealization] (espresso.north) -- ++(0,1.3) -| ([xshift=-24pt]beverage.south);
+    \draw[umlrealization] (darkroast.north) -- ++(0,1.3) -| ([xshift=-8pt]beverage.south);
+    \draw[umlrealization] (condiment.north) -- ++(0,1.3) -| ([xshift=16pt]beverage.south);
+
+    % Aggregation / Wraps (routed out to the right into beverage.east)
+    \draw[umlaggregation] (condiment.east) -- ++(1.6,0) |- (beverage.east);
+
+    % Concrete Decorators inherit CondimentDecorator (all enter condiment.south going straight UP)
+    \draw[umlrealization] (milk.north) -- ++(0,1.0) -| ([xshift=-24pt]condiment.south);
+    \draw[umlrealization] (mocha.north) -- (condiment.south);
+    \draw[umlrealization] (whip.north) -- ++(0,1.0) -| ([xshift=24pt]condiment.south);
+  \end{tikzpicture}%
+  }
+  \caption{Decorator pattern applied to the coffee beverage customization system.}\label{fig:decorator-beverage}
+\end{figure}
+
+\section{Implementation with Decorator}
+The standard C++11 implementation uses smart pointers (\texttt{std::unique\_ptr}) to manage ownership cleanly along the object composition chain:
+
+\begin{lstlisting}[style=cpp]
+#include <iostream>
+#include <memory>
+#include <string>
+
+// Abstract Component
+class Beverage {
+protected:
+    std::string description = "Unknown Beverage";
+public:
+    virtual ~Beverage() = default;
+    virtual std::string getDescription() const { return description; }
+    virtual double cost() const = 0;
+};
+
+// Concrete Components
+class Espresso : public Beverage {
+public:
+    Espresso() { description = "Espresso"; }
+    double cost() const override { return 1.99; }
+};
+
+class DarkRoast : public Beverage {
+public:
+    DarkRoast() { description = "Dark Roast Coffee"; }
+    double cost() const override { return 0.99; }
+};
+
+// Abstract Decorator
+class CondimentDecorator : public Beverage {
+protected:
+    std::unique_ptr<Beverage> wrapped;
+public:
+    CondimentDecorator(std::unique_ptr<Beverage> b) : wrapped(std::move(b)) {}
+};
+
+// Concrete Decorators
+class Milk : public CondimentDecorator {
+public:
+    Milk(std::unique_ptr<Beverage> b) : CondimentDecorator(std::move(b)) {}
+    std::string getDescription() const override {
+        return wrapped->getDescription() + ", Milk";
+    }
+    double cost() const override {
+        return wrapped->cost() + 0.10;
+    }
+};
+
+class Mocha : public CondimentDecorator {
+public:
+    Mocha(std::unique_ptr<Beverage> b) : CondimentDecorator(std::move(b)) {}
+    std::string getDescription() const override {
+        return wrapped->getDescription() + ", Mocha";
+    }
+    double cost() const override {
+        return wrapped->cost() + 0.20;
+    }
+};
+
+class Whip : public CondimentDecorator {
+public:
+    Whip(std::unique_ptr<Beverage> b) : CondimentDecorator(std::move(b)) {}
+    std::string getDescription() const override {
+        return wrapped->getDescription() + ", Whip";
+    }
+    double cost() const override {
+        return wrapped->cost() + 0.15;
+    }
+};
+\end{lstlisting}
+
+Client code constructs and decorates beverages dynamically at runtime:
+
+\begin{lstlisting}[style=cpp]
+int main() {
+    // Plain Espresso
+    std::unique_ptr<Beverage> drink1 = std::make_unique<Espresso>();
+    std::cout << drink1->getDescription() << " $" << drink1->cost() << "\n";
+
+    // Dark Roast with double Mocha and Whip
+    std::unique_ptr<Beverage> drink2 = std::make_unique<DarkRoast>();
+    drink2 = std::make_unique<Mocha>(std::move(drink2));
+    drink2 = std::make_unique<Mocha>(std::move(drink2)); // Second portion of Mocha
+    drink2 = std::make_unique<Whip>(std::move(drink2));
+
+    std::cout << drink2->getDescription() << " $" << drink2->cost() << "\n";
+    return 0;
+}
+\end{lstlisting}
+
+Compiling with \texttt{g++ -std=c++14 main.cpp} produces output where description strings and costs accumulate recursively through the decorator chain without modifying existing class definitions.
+
+\section{Technical considerations}
+\subsection{Ownership and memory management}
+When decorating objects in C++, clear ownership boundaries are vital to avoid memory leaks or dangling pointers. Using \texttt{std::unique\_ptr} establishes strict single ownership up the decorator chain: destroying the outermost decorator automatically recursively deletes all wrapped inner components. If decorators must be shared across threads or data structures, \texttt{std::shared\_ptr} can be employed instead.
+
+\subsection{Order of execution dependence}
+Decorators execute their logic either before or after delegating to the wrapped component. If decorator actions are non-commutative (e.g., applying a 10\% discount decorator vs. a \$1.00 surcharge decorator), the order in which decorators are wrapped directly dictates the final behavior and outcome.
+
+\subsection{Interface transparency vs. type inspection}
+Because decorators implement the component interface, clients interact with decorators as if they were base components. However, this transparency breaks down if the client relies on runtime type reflection or casting (e.g., \texttt{dynamic\_cast<Espresso*>(drink.get())}). A wrapped \texttt{Espresso} object is contained within a \texttt{Mocha} decorator, so casting the decorator directly to \texttt{Espresso*} will return \texttt{nullptr}.
+
+\subsection{Performance and delegation overhead}
+Each added decorator introduces a layer of dynamic dispatch (virtual function calls) and pointer dereferencing. While modern CPU branch predictors handle standard delegation chains efficiently, deeply nested decorator chains (e.g., hundreds of wrappers) can accumulate minor stack and latency overhead compared to monolithic direct function calls.
+
+\section{Advantages and disadvantages}
+\begin{table}[htbp]
+\centering
+\caption{Trade-offs of the Decorator pattern.}
+\begin{tabularx}{\textwidth}{@{}YY@{}}
+\toprule
+\textbf{Advantages} & \textbf{Disadvantages} \\
+\midrule
+Provides greater flexibility than static inheritance. & Can result in a large number of small, visually similar classes. \\
+Allows dynamic addition/removal of responsibilities at runtime. & Object instantiation becomes complex without Factory or Builder patterns. \\
+Avoids feature-laden classes high up in the hierarchy. & Breaks object identity (\texttt{dynamic\_cast} to concrete component fails). \\
+Adheres strictly to the Open/Closed Principle (OCP). & Decorator ordering dependencies can cause subtle runtime bugs. \\
+Supports multiple layers of identical responsibilities (e.g., double Mocha). & Deep delegation chains can complicate debugging and stack tracing. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Other real-world applications}
+\begin{description}[style=nextline]
+  \item[Java I/O streams (\texttt{java.io})]
+  \texttt{BufferedInputStream} and \texttt{GZIPInputStream} decorate a base \texttt{InputStream} (e.g., \texttt{FileInputStream}), adding buffering and decompression capabilities seamlessly:
+  \begin{lstlisting}[style=cpp]
+  // Java I/O Stream Decorator example concept:
+  // InputStream in = new GZIPInputStream(new BufferedInputStream(new FileInputStream("data.gz")));
+  \end{lstlisting}
+
+  \item[GUI toolkits: window decoration]
+  Graphical user interface frameworks decorate basic UI controls (such as a text panel) with visual embellishments like \texttt{ScrollbarDecorator} and \texttt{BorderDecorator} without modifying the base control's rendering logic.
+
+  \item[Web development: HTTP middleware]
+  Web application frameworks wrap core request handlers in middleware layers that add cross-cutting concerns like authentication checking, request logging, CORS headers, and response compression.
+
+  \item[Graphics rendering pipelines]
+  Render targets in game engines wrap base image buffers with post-processing filters (e.g., bloom, depth of field, color grading), applying dynamic visual effects sequentially before final display output.
+\end{description}
+
+\clearpage
+\section{Relationship to similar patterns}
+\begin{center}
+\textbf{Decorator compared with related patterns}\par\medskip
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lYY@{}}
+\toprule
+\textbf{Pattern} & \textbf{Primary intent} & \textbf{Key distinction} \\
+\midrule
+Adapter & Convert one interface to match another expected interface. & Adapter changes the interface; Decorator preserves or enhances the interface. \\
+Strategy & Alter an object's internal algorithm or strategy. & Strategy changes the guts of an object; Decorator changes the skin from the outside. \\
+Proxy & Control access to an underlying subject. & Proxy manages lifecycle/access; Decorator adds functional responsibilities. \\
+Composite & Treat individual objects and compositions uniformly. & Composite builds tree hierarchies; Decorator adds responsibilities along a single chain. \\
+Facade & Provide a simplified entry point to a complex subsystem. & Facade defines a new simple interface; Decorator retains the exact component interface. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Multiple Choice Quiz}
+\begin{enumerate}
+  \item Which category contains Decorator?\quad
+  (a) Creational \quad (b) Structural \quad (c) Behavioral \quad (d) Concurrency
+  \item What is the primary purpose of the Decorator pattern?\quad
+  (a) Interface translation \quad (b) Dynamic addition of responsibilities \quad
+  (c) Access control \quad (d) Singleton creation
+  \item In the coffee-beverage example, how does Decorator avoid class explosion?\quad
+  (a) Multiple inheritance \quad (b) Dynamic object wrapping \quad
+  (c) Boolean flags in the base class \quad (d) Global static variables
+  \item What key relationship exists between a Decorator and its Component?\quad
+  (a) Inheritance only \quad (b) Aggregation only \quad
+  (c) Both realization (is-a) and aggregation (has-a) \quad (d) No relationship
+  \item What is a known side-effect of wrapping objects with Decorators?\quad
+  (a) Static dispatch only \quad (b) Obscured concrete object identity (\texttt{dynamic\_cast} fails) \quad
+  (c) Prevents nested wrapping \quad (d) Disables recursion
+  \item How does Decorator differ from Adapter?\quad
+  (a) Decorator changes the interface \quad (b) Decorator preserves or enhances the interface \quad
+  (c) Adapter adds responsibilities \quad (d) They have identical intent
+  \item In C++11, what is the best practice for ownership in a Decorator chain?\quad
+  (a) Raw unmanaged pointers \quad (b) \texttt{std::unique\_ptr} for cascading cleanup \quad
+  (c) Global arrays \quad (d) Void pointers
+\end{enumerate}
+\textbf{Answer key:} 1(b), 2(b), 3(b), 4(c), 5(b), 6(b), 7(b).
+
+\chapter{Facade Pattern}
+
+\section{Real-world problem: operating a home theater}
+A home-theater system is simple from the viewer's perspective---start a movie
+and stop it later---but the operation requires coordination among several
+independent devices:
+\begin{itemize}
+  \item the \textbf{amplifier} supplies sound and needs a source and volume;
+  \item the \textbf{DVD player} powers on, plays, stops, and powers off;
+  \item the \textbf{projector} powers on and selects the DVD input;
+  \item the \textbf{screen} must be lowered before viewing and raised afterward;
+  \item the \textbf{theater lights} must be dimmed and later restored.
+\end{itemize}
+
+Starting a movie requires the following ordered workflow:
+\begin{enumerate}
+  \item dim the lights to 20 percent and lower the screen;
+  \item turn on the projector and select the DVD input;
+  \item turn on the DVD player;
+  \item turn on the amplifier, select DVD, and set the volume to 10; and
+  \item ask the DVD player to play the requested movie.
+\end{enumerate}
+Ending the movie reverses the setup: stop playback, power off the amplifier,
+DVD player, and projector, raise the screen, and restore the lights. Forgetting
+an operation or changing the order can leave the system in an incorrect state.
+
+\section{Naive solution without Facade}
+The naive implementation creates every subsystem in the client and performs the
+entire workflow directly. The actual seminar source has the following structure:
+
+\begin{lstlisting}[style=cpp]
+int main() {
+    Amplifier amp;
+    DvdPlayer dvd;
+    Projector projector;
+    Screen screen;
+    TheaterLights lights;
+
+    // Client manually starts the movie.
+    lights.dim(20);
+    screen.down();
+    projector.on();
+    projector.setInput("DVD");
+    dvd.on();
+    amp.on();
+    amp.setSource("DVD");
+    amp.setVolume(10);
+    dvd.play("The Matrix");
+
+    // Client must also perform the complete shutdown sequence.
+    dvd.stop();
+    amp.off();
+    dvd.off();
+    projector.off();
+    screen.up();
+    lights.on();
+}
+\end{lstlisting}
+
+This program produces the correct behavior, so the problem is not functional
+correctness. The problem is the structure of the client and the cost of future
+change.
+
+\section{Problems in the naive design}
+\begin{enumerate}
+  \item \textbf{Tight coupling.} The client depends on five concrete subsystem
+  classes and must understand every relevant method.
+  \item \textbf{Complex orchestration.} Correct behavior depends on a long,
+  ordered sequence of calls rather than one operation that expresses intent.
+  \item \textbf{Code duplication.} Every client that starts or stops a movie
+  must repeat the workflow.
+  \item \textbf{Single Responsibility Principle violation.} The client manages
+  its own application logic as well as home-theater coordination.
+  \item \textbf{Maintenance burden.} A changed device API or an additional
+  component such as a subwoofer can affect many client locations.
+\end{enumerate}
+
+\section{Pattern intent and applicability}
+Facade is a \textbf{structural design pattern}. Its intent is to provide a
+unified interface to a set of interfaces in a subsystem and thereby define a
+higher-level interface that is easier to use~\cite{gof}. It is appropriate when:
+\begin{itemize}
+  \item clients need a small set of common workflows over a complex subsystem;
+  \item dependencies between clients and implementation classes should be
+  reduced; or
+  \item a layered architecture needs a clear entry point into each layer.
+\end{itemize}
+
+Facade is a convenience boundary, not an access-control mechanism. Subsystem
+classes may remain public for advanced clients that need fine-grained control.
+The pattern therefore simplifies the normal path without forcing every possible
+operation into one interface. It defines new client-facing operations by
+combining existing subsystem capabilities; it does not add functionality to the
+subsystem itself.
+
+\section{General class structure}
+Figure~\ref{fig:facade-general} shows the general relationship. The client
+depends on a Facade, which delegates each high-level operation to the
+appropriate subsystem objects. An optional Additional Facade can expose a
+focused subset of operations when placing every workflow in one class would
+make the primary Facade too broad. Clients and other facades may use this
+additional entry point. The subsystems do not need to know that either Facade
+exists.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.95\textwidth}{!}{%
+  \begin{tikzpicture}
+    \node[umlclass] (client) at (0,0) {
+      \textbf{Client}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + main()
+    };
+
+    \node[umlclass] (facade) at (4,1.55) {
+      \textbf{Facade}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + operation1()\\
+      + operation2()
+    };
+
+    \node[umlclass] (additionalFacade) at (4,-1.55) {
+      \textbf{AdditionalFacade}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + specializedOperation()
+    };
+
+    \node[umlclass] (subsystemA) at (9,3.1) {
+      \textbf{SubsystemA}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + operationA1()\\
+      + operationA2()
+    };
+
+    \node[umlclass] (subsystemB) at (9,0) {
+      \textbf{SubsystemB}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + operationB1()\\
+      + operationB2()
+    };
+
+    \node[umlclass] (subsystemC) at (9,-3.1) {
+      \textbf{SubsystemC}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + operationC1()\\
+      + operationC2()
+    };
+
+    \draw[umlassociation] (client) --
+      node[umllabel, above, sloped]{uses} (facade);
+    \draw[umlassociation] (client) --
+      node[umllabel, below, sloped]{uses} (additionalFacade);
+    \draw[umlassociation] (facade) --
+      node[umllabel, right]{uses} (additionalFacade);
+    \draw[umlassociation] (facade) --
+      node[umllabel, above, sloped]{delegates} (subsystemA);
+    \draw[umlassociation] (facade) --
+      node[umllabel, above, sloped]{delegates} (subsystemB);
+    \draw[umlassociation] (additionalFacade) --
+      node[umllabel, below, sloped]{delegates} (subsystemC);
+  \end{tikzpicture}%
+  }
+  \caption{General Facade structure with an optional additional Facade.}\label{fig:facade-general}
+\end{figure}
+
+The primary participants are:
+\begin{itemize}
+  \item \textbf{Client}: requests a high-level service;
+  \item \textbf{Facade}: knows which subsystem objects perform the request and
+  coordinates them;
+  \item \textbf{Additional Facade}: provides a smaller, cohesive entry point
+  when the primary Facade would otherwise accumulate unrelated operations; and
+  \item \textbf{Subsystem classes}: implement the actual domain operations and
+  can still be used directly when necessary.
+\end{itemize}
+
+\section{Home-theater class structure}
+In Figure~\ref{fig:facade-theater}, \texttt{HomeTheaterFacade} maintains
+associations to the five subsystem objects and coordinates their operations.
+Unlike Decorator, the Facade does not implement the same interface as those
+objects. It offers the high-level operations \texttt{watchMovie} and
+\texttt{endMovie}, each of which combines existing device capabilities rather
+than adding new functionality to the subsystem.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+    scale=0.88,
+    transform shape,
+    node distance=0.55cm and 2.2cm
+  ]
+    \node[umlclass] (facade) {
+      \textbf{HomeTheaterFacade}
+      \nodepart{second}
+      - Amplifier amp\\
+      - DvdPlayer dvd\\
+      - Projector projector\\
+      - Screen screen\\
+      - TheaterLights lights
+      \nodepart{third}
+      + watchMovie(movie)\\
+      + endMovie()
+    };
+
+    \node[umlclass, left=of facade] (client) {
+      \textbf{Client}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + main()
+    };
+
+    \node[umlclass, right=of facade] (projector) {
+      \textbf{Projector}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + on()\\
+      + off()\\
+      + setInput(source)
+    };
+
+    \node[umlclass, above=of projector] (dvd) {
+      \textbf{DvdPlayer}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + on()\\
+      + off()\\
+      + play(movie)\\
+      + stop()\\
+      + eject()
+    };
+
+    \node[umlclass, above=of dvd] (amplifier) {
+      \textbf{Amplifier}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + on()\\
+      + off()\\
+      + setSource(source)\\
+      + setVolume(level)
+    };
+
+    \node[umlclass, below=of projector] (screen) {
+      \textbf{Screen}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + down()\\
+      + up()
+    };
+
+    \node[umlclass, below=of screen] (lights) {
+      \textbf{TheaterLights}
+      \nodepart{second}\strut
+      \nodepart{third}
+      + dim(level)\\
+      + on()
+    };
+
+    \draw[umlassociation] (client) --
+      node[umllabel, above]{uses} (facade);
+    \draw[umlassociation] (facade) --
+      node[umllabel, above, sloped]{coordinates} (amplifier);
+    \draw[umlassociation] (facade) --
+      node[umllabel, above, sloped]{coordinates} (dvd);
+    \draw[umlassociation] (facade) --
+      node[umllabel, above]{coordinates} (projector);
+    \draw[umlassociation] (facade) --
+      node[umllabel, below, sloped]{coordinates} (screen);
+    \draw[umlassociation] (facade) --
+      node[umllabel, below, sloped]{coordinates} (lights);
+  \end{tikzpicture}
+  \caption{Facade structure for the home-theater problem.}\label{fig:facade-theater}
+\end{figure}
+
+\section{Implementation with Facade}
+The seminar implementation uses header-only C++11 classes and the standard
+library. Subsystem objects are created by the client and injected into the
+Facade through its constructor:
+
+\begin{lstlisting}[style=cpp]
+class HomeTheaterFacade {
+private:
+    Amplifier& amp;
+    DvdPlayer& dvd;
+    Projector& projector;
+    Screen& screen;
+    TheaterLights& lights;
+
+public:
+    HomeTheaterFacade(Amplifier& a, DvdPlayer& d, Projector& p,
+                      Screen& s, TheaterLights& l)
+        : amp(a), dvd(d), projector(p), screen(s), lights(l) {}
+
+    void watchMovie(const std::string& movie) {
+        lights.dim(20);
+        screen.down();
+        projector.on();
+        projector.setInput("DVD");
+        dvd.on();
+        amp.on();
+        amp.setSource("DVD");
+        amp.setVolume(10);
+        dvd.play(movie);
+    }
+
+    void endMovie() {
+        dvd.stop();
+        amp.off();
+        dvd.off();
+        projector.off();
+        screen.up();
+        lights.on();
+    }
+};
+\end{lstlisting}
+
+References are suitable for this demonstration for three reasons. They avoid
+copying objects that conceptually represent hardware, guarantee non-null
+dependencies, and communicate that the Facade uses but does not own the
+subsystems. Consequently, the subsystem objects must outlive the Facade.
+
+Client code now communicates intent through two calls:
+
+\begin{lstlisting}[style=cpp]
+#include "HomeTheaterFacade.h"
+
+int main() {
+    Amplifier amp;
+    DvdPlayer dvd;
+    Projector projector;
+    Screen screen;
+    TheaterLights lights;
+
+    HomeTheaterFacade theater(amp, dvd, projector, screen, lights);
+    theater.watchMovie("The Matrix");
+    std::cout << "\n--- Movie is playing ---\n\n";
+    theater.endMovie();
+}
+\end{lstlisting}
+
+Both the naive and Facade programs compile with
+\texttt{g++ -std=c++11} and produce the same sequence of device output. The
+improvement is therefore internal design quality: orchestration is defined once
+and ordinary clients no longer depend on its details.
+
+\section{Technical considerations}
+\subsection{Configuration and flexibility}
+The demonstration hardcodes a 20-percent light level, volume 10, and DVD input
+to keep the workflow visible. A production Facade could accept a configuration
+object while retaining convenient defaults. Advanced clients can also bypass
+the Facade and call \texttt{amp.setVolume} directly with a custom value.
+
+\subsection{Exception safety}
+If a device operation fails midway through \texttt{watchMovie}, earlier
+devices may remain active. A production implementation should provide rollback
+or RAII-based cleanup and must decide what to do if cleanup itself fails. This
+is a workflow-transaction concern that the Facade conveniently centralizes.
+
+\subsection{Open/Closed Principle trade-off}
+Adding a \texttt{Subwoofer} will usually modify the Facade rather than every
+workflow client, which is a substantial maintenance improvement. However, the
+current constructor-injection design may also require a change at the
+application's dependency-assembly point to supply the new object. Strict OCP
+requirements can be addressed with subsystem interfaces, grouped dependencies,
+or a specialized Facade, but such flexibility should be justified by expected
+change rather than added automatically.
+
+\subsection{Avoiding a god object}
+A Facade should primarily delegate and coordinate a cohesive set of use cases.
+It should not absorb unrelated domain state and business logic. When its scope
+grows, focused interfaces such as \texttt{VideoPlaybackFacade} and
+\texttt{AudioCalibrationFacade} are preferable to one universal Facade.
+
+\section{Advantages and disadvantages}
+\begin{table}[htbp]
+\centering
+\caption{Trade-offs of the Facade pattern.}
+\begin{tabularx}{\textwidth}{@{}YY@{}}
+\toprule
+\textbf{Advantages} & \textbf{Disadvantages} \\
+\midrule
+Isolates ordinary clients from subsystem complexity. & A broad Facade can become a god object. \\
+Reduces coupling and duplicated orchestration. & Adds another delegation layer. \\
+Improves readability through use-case-oriented methods. & A simplified API may omit advanced options. \\
+Localizes common workflow changes. & Changes to injected dependencies may affect the composition root. \\
+Preserves direct subsystem access when needed. & Clients can bypass the Facade and reintroduce coupling. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Other real-world applications}
+\begin{description}[style=nextline]
+  \item[Web development: API Gateway]
+  A mobile or web client makes one request to a gateway, which handles
+  authentication and coordinates catalog, inventory, ordering, payment, and
+  notification services before returning a unified response.
+
+  \item[Mobile development: hardware abstraction]
+  A method such as \texttt{Camera.takePhoto} can coordinate sensor access,
+  buffers, image processing, device drivers, and file output behind one operation.
+
+  \item[Game development: engine API]
+  High-level operations such as playing a sound or applying force shield game
+  code from rendering, audio, physics, input, and hardware-acceleration details.
+
+  \item[Database access: JDBC and ORMs]
+  Operations such as \texttt{session.save} hide connection management,
+  SQL generation, database dialects, network protocols, and result processing.
+\end{description}
+
+\clearpage
+\section{Relationship to similar patterns}
+\begin{center}
+\textbf{Facade compared with related patterns}\par\medskip
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lYY@{}}
+\toprule
+\textbf{Pattern} & \textbf{Primary intent} & \textbf{Key distinction} \\
+\midrule
+Adapter & Make incompatible interfaces work together. & Usually translates one object to an existing target interface. \\
+Mediator & Coordinate communication among peer objects. & Colleagues communicate through the mediator; Facade communication is normally client-to-subsystem. \\
+Decorator & Add behavior while preserving an interface. & Decorators share the component interface; a Facade creates a simpler interface. \\
+Proxy & Control access to another object. & A Proxy commonly preserves the subject interface and may enforce access or lifecycle rules. \\
+Singleton & Ensure one instance and a global access point. & A Facade may be a Singleton, but global state harms testing and is not required by Facade. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Multiple Choice Quiz}
+\begin{enumerate}
+  \item Which category contains Facade?\quad
+  (a) Creational \quad (b) Structural \quad (c) Behavioral \quad (d) Concurrency
+  \item What is its primary purpose?\quad
+  (a) Object creation \quad (b) A simplified subsystem interface \quad
+  (c) One-to-many notification \quad (d) Tree composition
+  \item In the home-theater example, what changes for an ordinary client?\quad
+  (a) Devices disappear \quad (b) It calls the Facade instead of orchestrating
+  every subsystem \quad (c) Volume becomes automatic \quad (d) Order no longer matters
+  \item What is a principal risk?\quad
+  (a) Increased inheritance \quad (b) A god-object Facade \quad
+  (c) Forced subsystem rewriting \quad (d) No direct access
+  \item Which is not a typical Facade example?\quad
+  (a) API Gateway \quad (b) Singleton logger \quad (c) ORM \quad (d) Game-engine API
+  \item Does Facade prohibit direct subsystem access?\quad
+  (a) Always \quad (b) No \quad (c) Only in C++ \quad (d) Only for private methods
+  \item Where should a common new subsystem workflow normally be coordinated?\quad
+  (a) Every client \quad (b) The Facade \quad (c) The compiler \quad (d) A decorator
+\end{enumerate}
+\textbf{Answer key:} 1(b), 2(b), 3(b), 4(b), 5(b), 6(b), 7(b).
+
+\chapter{Strategy Pattern}
+
+\section{Real-world problem: navigation route planning}
+A navigation application must calculate routes between an origin and a
+destination for several transport modes. Although every mode has the same goal,
+each requires a distinct algorithm and different data:
+
+\begin{itemize}
+  \item \textbf{Driving} prioritizes highways, travel time, traffic conditions,
+  and toll roads.
+  \item \textbf{Walking} prioritizes sidewalks, pedestrian crossings,
+  footbridges, and park shortcuts while avoiding roads unsafe for pedestrians.
+  \item \textbf{Public transit} evaluates bus timetables, metro lines, walking
+  connections, and transfers.
+  \item \textbf{Bicycling} prioritizes bicycle lanes, safe streets, and favorable
+  elevation profiles.
+\end{itemize}
+
+The set of algorithms is expected to grow as the application adds electric
+scooters, sightseeing routes, accessibility-aware routing, or eco-friendly
+driving. The design challenge is to support these variations and switch between
+them at runtime without concentrating every algorithm in one class.
+
+\subsection{Real-world analogy}
+Consider a traveler who needs to reach an airport. The destination remains the
+same, but the traveler can take a bus, hire a taxi, ride a bicycle, or drive a
+car. Each option is a transportation strategy that makes different trade-offs:
+the bus may minimize cost, a taxi may prioritize convenience and travel time,
+a bicycle may suit a short trip with little luggage, and a car may offer greater
+flexibility. The traveler selects an option according to factors such as budget,
+time, distance, weather, and luggage. Changing the selected option changes how
+the journey is performed without changing its overall goal, illustrating how
+interchangeable strategies provide alternative ways to complete the same
+task~\cite{refactoringguru}.
+
+\section{Naive solution without Strategy}
+The naive seminar implementation stores a \texttt{TransportMode} value in
+\texttt{Navigator}. Its \texttt{buildRoute} method selects an algorithm with a
+conditional chain:
+
+\begin{lstlisting}[style=cpp]
+enum class TransportMode {
+    DRIVING,
+    WALKING,
+    PUBLIC_TRANSIT
+};
+
+class Navigator {
+private:
+    TransportMode mode;
+
+public:
+    Navigator(TransportMode initial = TransportMode::DRIVING)
+        : mode(initial) {}
+
+    void setMode(TransportMode selected) {
+        mode = selected;
+    }
+
+    void buildRoute(const std::string& origin,
+                    const std::string& destination) {
+        std::cout << "Calculating route from " << origin
+                  << " to " << destination << "...\n";
+
+        if (mode == TransportMode::DRIVING) {
+            std::cout << "Finding the fastest highway route.\n";
+        } else if (mode == TransportMode::WALKING) {
+            std::cout << "Finding pedestrian paths and shortcuts.\n";
+        } else if (mode == TransportMode::PUBLIC_TRANSIT) {
+            std::cout << "Checking bus and metro schedules.\n";
+        } else {
+            std::cout << "Error: unknown transport mode.\n";
+        }
+    }
+};
+\end{lstlisting}
+
+The client changes the enumeration before each request:
+
+\begin{lstlisting}[style=cpp]
+Navigator navigator(TransportMode::DRIVING);
+navigator.buildRoute("Home", "Downtown Office");
+
+navigator.setMode(TransportMode::WALKING);
+navigator.buildRoute("Downtown Office", "City Park");
+
+navigator.setMode(TransportMode::PUBLIC_TRANSIT);
+navigator.buildRoute("City Park", "Home");
+\end{lstlisting}
+
+This design works for three simple modes, but every routing rule remains part of
+one monolithic class.
+
+\section{Problems in the naive design}
+\begin{enumerate}
+  \item \textbf{Open/Closed Principle violation.} Adding
+  \texttt{BICYCLING} requires editing the enumeration and the conditional logic
+  in \texttt{Navigator}.
+  \item \textbf{Single Responsibility Principle violation.} The context manages
+  route requests and also implements every routing algorithm.
+  \item \textbf{Monolithic growth.} Traffic handling, timetable parsing,
+  elevation analysis, and future route types accumulate in one method or class.
+  \item \textbf{Poor isolated testing.} A routing algorithm cannot be tested as
+  an independent unit; tests must configure and execute the complete Navigator.
+  \item \textbf{Limited runtime composition.} Behavior is selected from a fixed
+  enumeration rather than supplied as a configurable algorithm object.
+  \item \textbf{Merge and maintenance risk.} Multiple developers changing
+  unrelated algorithms must edit the same central file.
+\end{enumerate}
+
+\section{Pattern intent and applicability}
+Strategy is a \textbf{behavioral design pattern}. Its intent is to define a
+family of algorithms, encapsulate each one, and make them interchangeable so
+that an algorithm can vary independently from the clients that use it~\cite{gof}.
+
+The pattern is appropriate when:
+\begin{itemize}
+  \item a system offers several meaningful variants of one algorithm;
+  \item a class contains large conditional branches that select behavior;
+  \item algorithms should be replaced or configured at runtime;
+  \item algorithm-specific data and dependencies should be isolated; or
+  \item each algorithm needs independent development and testing.
+\end{itemize}
+
+Strategy applies the principle \emph{favor composition over inheritance}. The
+Navigator context stores a strategy object and delegates routing to it. Unlike a
+design with a separate Navigator subclass for each mode, one context object can
+change its behavior without being destroyed and recreated.
+
+\section{General class structure}
+Figure~\ref{fig:strategy-general} shows the general participants and dependency
+direction.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{0.98\textwidth}{!}{%
+  \begin{tikzpicture}
+    \node[umlclass, minimum width=4.4cm] (context) at (-3.0,0) {
+      \textbf{Context}
+      \nodepart{two}
+      \texttt{- Strategy strategy}
+      \nodepart{three}
+      \texttt{+ setStrategy(Strategy)}\\
+      \texttt{+ executeStrategy()}
+    };
+
+    \node[umlclass, minimum width=3.8cm] (strategy) at (2.5,0) {
+      \textit{\textless\textless interface\textgreater\textgreater}\\
+      \textbf{Strategy}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ execute()*}
+    };
+
+    \node[umlclass, minimum width=3.1cm] (client) at (-6.0,-4.2) {
+      \textbf{Client}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ main()}
+    };
+
+    \node[umlclass, minimum width=3.4cm] (strategy-a) at (-2.2,-4.2) {
+      \textbf{ConcreteStrategyA}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ execute()}
+    };
+
+    \node[umlclass, minimum width=3.4cm] (strategy-b) at (2.0,-4.2) {
+      \textbf{ConcreteStrategyB}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ execute()}
+    };
+
+    \node[umlclass, minimum width=3.4cm] (strategy-c) at (6.2,-4.2) {
+      \textbf{ConcreteStrategyC}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ execute()}
+    };
+
+    \draw[umlassociation] (client.north) -- (context.south west);
+    \draw[umldependency] (client.east) -- (strategy-a.west);
+    \draw[umlaggregation] (context.east) -- (strategy.west);
+    \draw[umlrealization] (strategy-a.north) -- (strategy.south west);
+    \draw[umlrealization] (strategy-b.north) -- (strategy.south);
+    \draw[umlrealization] (strategy-c.north) -- (strategy.south east);
+  \end{tikzpicture}%
+  }
+  \caption{General Strategy pattern structure.}\label{fig:strategy-general}
+\end{figure}
+
+\begin{itemize}
+  \item The \textbf{Strategy} interface declares the operation shared by all
+  algorithms.
+  \item Each \textbf{Concrete Strategy} implements one algorithm.
+  \item The \textbf{Context} stores a Strategy reference and delegates the
+  operation instead of implementing the algorithm.
+  \item The \textbf{Client} selects a concrete strategy, configures the Context,
+  and may replace the strategy while the program is running.
+\end{itemize}
+
+The Context depends only on the abstraction. Concrete strategies are independent
+of one another and do not need to know which other algorithms are available.
+
+\section{Navigation class structure}
+Figure~\ref{fig:strategy-navigation} maps the general roles to the seminar
+example. Navigator is the Context, RouteStrategy is the common interface, and
+the four transport-mode classes are concrete strategies.
+
+\begin{figure}[H]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}
+    \node[umlclass, minimum width=5.1cm] (navigator) at (-4.0,0) {
+      \textbf{Navigator}
+      \nodepart{two}
+      \texttt{- RouteStrategy* strategy}
+      \nodepart{three}
+      \texttt{+ setStrategy(RouteStrategy*)}\\
+      \texttt{+ buildRoute(origin, destination)}
+    };
+
+    \node[umlclass, minimum width=5.0cm] (route-strategy) at (2.5,0) {
+      \textit{\textless\textless interface\textgreater\textgreater}\\
+      \textbf{RouteStrategy}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ buildRoute(origin, destination)*}
+    };
+
+    \node[umlclass, minimum width=3.0cm] (nav-client) at (-7.7,-5.0) {
+      \textbf{Client}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ main()}
+    };
+
+    \node[umlclass, minimum width=4.2cm] (driving) at (-3.6,-5.0) {
+      \textbf{DrivingStrategy}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ buildRoute(origin,}\\
+      \texttt{\phantom{+ buildRoute(}destination)}
+    };
+
+    \node[umlclass, minimum width=4.2cm] (walking) at (1.1,-5.0) {
+      \textbf{WalkingStrategy}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ buildRoute(origin,}\\
+      \texttt{\phantom{+ buildRoute(}destination)}
+    };
+
+    \node[umlclass, minimum width=4.2cm] (transit) at (5.8,-5.0) {
+      \textbf{PublicTransitStrategy}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ buildRoute(origin,}\\
+      \texttt{\phantom{+ buildRoute(}destination)}
+    };
+
+    \node[umlclass, minimum width=4.2cm] (bicycling) at (10.5,-5.0) {
+      \textbf{BicyclingStrategy}
+      \nodepart{two}
+      \strut
+      \nodepart{three}
+      \texttt{+ buildRoute(origin,}\\
+      \texttt{\phantom{+ buildRoute(}destination)}
+    };
+
+    \draw[umlassociation] (nav-client.north) -- (navigator.south west);
+    \draw[umldependency] (nav-client.east) -- (driving.west);
+    \draw[umldependency] (nav-client.south) -- ++(0,-0.8) -|
+      (bicycling.south);
+    \draw[umlaggregation] (navigator.east) -- (route-strategy.west);
+    \draw[umlrealization] (driving.north) -- (route-strategy.south west);
+    \draw[umlrealization] (walking.north) -- (route-strategy.south);
+    \draw[umlrealization] (transit.north) -- (route-strategy.south east);
+    \draw[umlrealization] (bicycling.north) -- (route-strategy.east);
+  \end{tikzpicture}%
+  }
+  \caption{Strategy structure for the navigation application.}\label{fig:strategy-navigation}
+\end{figure}
+
+The hollow-diamond association expresses that Navigator delegates to a strategy
+object. The demonstration uses a non-owning pointer, so the Client creates both
+the Context and concrete strategies.
+
+\section{Implementation with Strategy}
+\subsection{Strategy interface and concrete algorithms}
+The common interface declares a pure virtual route-building operation and a
+virtual destructor:
+
+\begin{lstlisting}[style=cpp]
+class RouteStrategy {
+public:
+    virtual ~RouteStrategy() = default;
+
+    virtual void buildRoute(const std::string& origin,
+                            const std::string& destination) const = 0;
+};
+\end{lstlisting}
+
+The virtual destructor makes destruction through a base-class pointer safe. The
+concrete classes implement the same operation with mode-specific behavior:
+
+\begin{lstlisting}[style=cpp]
+class DrivingStrategy : public RouteStrategy {
+public:
+    void buildRoute(const std::string& origin,
+                    const std::string& destination) const override {
+        std::cout << "Mode: DRIVING\n";
+        std::cout << "Highway priority, live traffic, and toll roads.\n";
+        std::cout << "Estimated time: 25 mins (18.5 km)\n";
+    }
+};
+
+class BicyclingStrategy : public RouteStrategy {
+public:
+    void buildRoute(const std::string& origin,
+                    const std::string& destination) const override {
+        std::cout << "Mode: BICYCLING\n";
+        std::cout << "Bike lanes and elevation-profile optimization.\n";
+        std::cout << "Estimated time: 50 mins (17.1 km)\n";
+    }
+};
+\end{lstlisting}
+
+The project also supplies walking and public-transit implementations. Adding the
+new bicycling implementation does not require a change to Navigator or the
+other strategy classes.
+
+\subsection{Context}
+The Context stores the currently selected strategy and forwards route requests:
+
+\begin{lstlisting}[style=cpp]
+class Navigator {
+private:
+    const RouteStrategy* strategy;
+
+public:
+    explicit Navigator(const RouteStrategy* initial = nullptr)
+        : strategy(initial) {}
+
+    void setStrategy(const RouteStrategy* selected) {
+        strategy = selected;
+    }
+
+    void buildRoute(const std::string& origin,
+                    const std::string& destination) const {
+        std::cout << "Calculating route from " << origin
+                  << " to " << destination << "...\n";
+
+        if (strategy) {
+            strategy->buildRoute(origin, destination);
+        } else {
+            std::cout << "Error: no routing strategy set.\n";
+        }
+    }
+};
+\end{lstlisting}
+
+The null check prevents dereferencing an unset pointer. A production design
+could instead require a valid strategy in the constructor or inject a Null
+Object strategy that performs defined fallback behavior.
+
+\subsection{Client and runtime switching}
+The actual client creates four stack-allocated strategy objects and switches the
+Context between them:
+
+\begin{lstlisting}[style=cpp]
+DrivingStrategy driving;
+WalkingStrategy walking;
+PublicTransitStrategy transit;
+BicyclingStrategy bicycling;
+
+Navigator navigator(&driving);
+navigator.buildRoute("Home", "Downtown Office");
+
+navigator.setStrategy(&walking);
+navigator.buildRoute("Downtown Office", "City Park");
+
+navigator.setStrategy(&transit);
+navigator.buildRoute("City Park", "Home");
+
+navigator.setStrategy(&bicycling);
+navigator.buildRoute("Home", "Riverside Bike Trail");
+\end{lstlisting}
+
+The implementation compiles as C++11 and demonstrates runtime polymorphism. The
+selected object must outlive the Navigator because the pointer is non-owning.
+
+\section{Technical considerations}
+\subsection{Pointers, ownership, and object slicing}
+Passing a concrete strategy by pointer or reference preserves virtual dispatch.
+Passing it by value as a \texttt{RouteStrategy} would be invalid because the
+interface is abstract; more generally, passing polymorphic derived objects by
+base value causes object slicing. If Navigator should own its strategy,
+\texttt{std::unique\_ptr<RouteStrategy>} is a clearer alternative. Shared
+ownership should be used only when the lifetime genuinely has multiple owners.
+
+\subsection{Const correctness and demonstration parameters}
+The declaration \texttt{const RouteStrategy*} makes the pointed-to strategy
+const through this pointer, while the pointer itself remains mutable so that
+\texttt{setStrategy} can replace it. The \texttt{buildRoute} member functions
+are const-qualified, indicating that route calculation does not mutate the
+strategy object. In the educational source, the concrete strategies receive
+\texttt{origin} and
+\texttt{destination}, but only the Context prints them. A production algorithm
+would consume these parameters; otherwise their names can be omitted in the
+definition to avoid unused-parameter compiler warnings.
+
+\subsection{Client coupling and creation}
+The Client still needs to select a concrete algorithm. This coupling is
+localized to configuration rather than spread through the Context and routing
+workflow. A Factory or dependency-injection configuration can further separate
+strategy creation from the client that executes routes.
+
+\subsection{Performance}
+Virtual dispatch adds one small indirect call and can inhibit inlining. This
+cost is negligible compared with route search, network access, payment
+processing, or other substantial algorithms. Highly performance-sensitive inner
+loops may instead use templates, the Curiously Recurring Template Pattern, or
+\texttt{std::variant} for static or closed-set polymorphism.
+
+\subsection{Testing}
+Each concrete strategy can be unit-tested independently. Navigator can be tested
+with a mock \texttt{RouteStrategy} that records the supplied origin and
+destination, proving that the Context delegates correctly without invoking a
+real routing service.
+
+\section{Advantages and disadvantages}
+\begin{table}[H]
+\centering
+\caption{Trade-offs of the Strategy pattern.}
+\begin{tabularx}{\textwidth}{@{}YY@{}}
+\toprule
+\textbf{Advantages} & \textbf{Disadvantages} \\
+\midrule
+Adds algorithms without modifying the Context. & Introduces more classes and objects. \\
+Separates algorithm logic from context logic. & Clients must understand enough to select a strategy. \\
+Supports runtime algorithm replacement. & Adds configuration and virtual-call indirection. \\
+Removes large behavior-selection conditionals. & Can over-engineer simple, stable behavior. \\
+Enables focused unit tests and mocks. & Strategy objects may require careful lifetime management. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Other real-world applications}
+\begin{description}[style=nextline]
+  \item[Web development: authentication and payment]
+  Authentication middleware can select local-password, Google OAuth, or another
+  provider strategy. Checkout systems can delegate payment to credit-card,
+  PayPal, Apple Pay, or other payment strategies.
+
+  \item[Mobile development: layout and caching]
+  Collection views can use linear, grid, or staggered layout strategies. Image
+  libraries can switch among memory-cache, disk-cache, and network-only policies.
+
+  \item[Game development: artificial intelligence and physics]
+  A non-player character can replace patrol, attack, and flee strategies as its
+  situation changes. Physics engines can choose collision-detection algorithms
+  according to scene density.
+
+  \item[Data processing: sorting and compression]
+  Software can select a sorting, compression, or serialization algorithm based
+  on data characteristics, performance requirements, or output format.
+\end{description}
+
+\clearpage
+\section{Relationship to similar patterns}
+\begin{center}
+\textbf{Strategy compared with related patterns}\par\medskip
+\small
+\begin{tabularx}{\textwidth}{@{}lYY@{}}
+\toprule
+\textbf{Pattern} & \textbf{Primary intent} & \textbf{Key distinction} \\
+\midrule
+State & Represent behavior associated with internal state. & State transitions are often initiated internally; strategies are normally selected externally. \\
+Template Method & Vary steps in an inherited algorithm skeleton. & Template Method uses class inheritance; Strategy uses object composition and runtime delegation. \\
+Command & Encapsulate a request for execution, queuing, logging, or undo. & Strategy represents how an algorithm is performed rather than a request to perform an action. \\
+Decorator & Add responsibilities while preserving an object's interface. & Decorator wraps to add behavior; Strategy replaces the delegated algorithm. \\
+Facade & Simplify access to a complex subsystem. & Facade offers a higher-level interface; Strategy exposes interchangeable implementations of one operation. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Multiple Choice Quiz}
+\begin{enumerate}
+  \item Which category contains Strategy?\quad
+  (a) Creational \quad (b) Structural \quad (c) Behavioral \quad (d) Architectural
+  \item What is its primary intent?\quad
+  (a) Adapt interfaces \quad (b) Encapsulate interchangeable algorithms \quad
+  (c) Ensure one instance \quad (d) Simplify a subsystem
+  \item Which principle is most directly supported when a new strategy is added
+  without changing Navigator?\quad
+  (a) Liskov Substitution \quad (b) Open/Closed \quad
+  (c) Interface Segregation \quad (d) Law of Demeter
+  \item What is the Context's role?\quad
+  (a) Implement every algorithm \quad (b) Store a Strategy and delegate to it \quad
+  (c) Prevent runtime changes \quad (d) Create JSON
+  \item What is a possible disadvantage?\quad
+  (a) Strategies cannot be tested \quad (b) Clients must select among strategies \quad
+  (c) Context must change for every strategy \quad (d) Runtime swapping is impossible
+  \item How does Strategy differ from Template Method?\quad
+  (a) Strategy uses composition; Template Method uses inheritance \quad
+  (b) Strategy uses inheritance; Template Method uses composition \quad
+  (c) Both require a Singleton \quad (d) They have identical intent
+  \item Why use a pointer or reference to the strategy in C++?\quad
+  (a) To force inlining \quad (b) To preserve polymorphism and avoid slicing \quad
+  (c) To create a Singleton \quad (d) To prevent testing
+\end{enumerate}
+\textbf{Answer key:} 1(c), 2(b), 3(b), 4(b), 5(b), 6(a), 7(b).
+
+\chapter{Comparison and Combined Use}
+
+\begin{table}[htbp]
+\centering
+\caption{Comparison of the three seminar patterns.}
+\small
+\begin{tabularx}{\textwidth}{@{}lYYY@{}}
+\toprule
+ & \textbf{Decorator} & \textbf{Strategy} & \textbf{Facade} \\
+\midrule
+Category & Structural & Behavioral & Structural \\
+Main question & What behavior can be added? & Which algorithm should run? & How can this subsystem be simpler? \\
+Mechanism & Recursive wrapping & Delegation to a policy object & Delegation to subsystem objects \\
+Interface & Same as wrapped component & Strategy-specific interface & New, simplified interface \\
+Runtime change & Add/remove wrapper layers & Replace the strategy & Usually use fixed workflows \\
+Primary benefit & Flexible extension & Interchangeable algorithms & Reduced client coupling \\
+Typical risk & Too many wrapper layers & Too many strategy classes & God-object facade \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The patterns can cooperate in one system. For example, a route-planning service
+may expose a \textbf{Facade} for simple trip planning, use a \textbf{Strategy}
+to select driving or walking algorithms, and apply \textbf{Decorators} for
+caching, metrics, or logging (Figure~\ref{fig:combined-patterns}). Pattern choice should follow the design problem;
+patterns are not goals by themselves.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[
+    node distance=1.2cm and 2.2cm,
+    box/.style={draw, rectangle, rounded corners=4pt, minimum width=3.4cm, minimum height=1.1cm, align=center, font=\small},
+    arrow/.style={draw, -{Latex[length=2.8mm,width=2.0mm]}, thick, usblue}
+  ]
+    \node[box, fill=usblue!10] (client) {\textbf{Client}\\ {\scriptsize Request Trip}};
+    \node[box, fill=usblue!25, right=of client] (facade) {\textbf{Facade}\\ {\scriptsize TripPlannerFacade}};
+    \node[box, fill=usblue!50, right=of facade, text=white] (strategy) {\textbf{Strategy}\\ {\scriptsize DrivingStrategy}};
+    \node[box, fill=usblue!75, right=of strategy, text=white] (decorator) {\textbf{Decorator}\\ {\scriptsize Logging / Cache}};
+
+    \draw[arrow] (client) -- node[above, font=\scriptsize\bfseries, text=usblue] {1. planTrip()} (facade);
+    \draw[arrow] (facade) -- node[above, font=\scriptsize\bfseries, text=usblue] {2. buildRoute()} (strategy);
+    \draw[arrow] (strategy) -- node[above, font=\scriptsize\bfseries, text=usblue] {3. wrap / log} (decorator);
+  \end{tikzpicture}%
+  }
+  \caption{Cooperative interaction of Facade, Strategy, and Decorator patterns.}\label{fig:combined-patterns}
+\end{figure}
+
+\chapter{Conclusion}
+Decorator, Strategy, and Facade show how object composition can improve change
+management in different ways. Decorator extends individual objects without a
+large inheritance tree. Strategy separates variable algorithms from the context
+that uses them. Facade shields clients from subsystem complexity through a
+cohesive high-level interface. Their benefits are strongest when the relevant
+variation or complexity is genuine; applying them to trivial code can increase
+indirection without sufficient return. A good design therefore balances
+flexibility, clarity, ownership, testability, and expected future change.
+
+\appendix
+\chapter{Changes Since the Last Presentation}
+This chapter summarizes the primary revisions, structural enhancements, and technical updates made to the seminar materials and report since the previous presentation checkpoint.
+
+\section{Presentation Slide Deck Updates}
+The presentation slides were revised to enhance visual clarity, structure, and alignment with the report:
+\begin{itemize}
+  \item Re-organized slide order to introduce real-world problems before pattern abstractions.
+  \item Added dedicated slides comparing static inheritance vs. dynamic composition.
+  \item Formatted code snippets with syntax highlighting and color accents for key pattern methods.
+\end{itemize}
+
+\section{Expansion of Decorator, Strategy, and Facade Patterns}
+Comprehensive theoretical and practical content was added for Decorator, Strategy, and Facade design patterns:
+\begin{itemize}
+  \item \textbf{Decorator Pattern}: Enhanced POS coffee beverage domain, smart pointer ownership, TikZ UML diagrams, trade-off matrix, and multiple-choice quizzes.
+  \item \textbf{Strategy Pattern}: Introduced the navigation routing domain, real-world transportation analogy, polymorphic strategy delegation, trade-offs, and multiple-choice quizzes.
+  \item \textbf{Facade Pattern}: Incorporated the home-theater orchestration example, subsystem abstraction boundaries, trade-off analysis, and multiple-choice quizzes.
+\end{itemize}
+
+\section{UML Class Diagram Refinements}
+All class diagrams were converted and drawn using TikZ for high-resolution vector rendering:
+\begin{itemize}
+  \item Fixed line and text label overlaps between realization (\texttt{implements}/\texttt{extends}) and aggregation (\texttt{wraps}) relationships.
+  \item Re-routed delegation and wrapping arrows cleanly out to diagram margins to prevent visual clutter.
+  \item Enforced standard UML shape styles (dashed arrows with open triangles for realization, open diamonds for aggregation).
+\end{itemize}
+
+\section{Modern C++ Refactoring with Smart Pointers}
+All C++ code examples were refactored to conform to modern C++11/C++14 best practices:
+\begin{itemize}
+  \item Replaced raw pointers with \texttt{std::unique\_ptr} to guarantee automatic resource cleanup and cascading destruction down decorator and strategy composition chains.
+  \item Introduced \texttt{std::make\_unique} for exception-safe object allocation.
+  \item Addressed memory ownership boundaries, object slicing prevention, and move semantics (\texttt{std::move}).
+\end{itemize}
+
+\chapter{AI Usage Declaration}
+\section{Declaration of AI use}
+Group 53 declares that generative AI was used as a support tool during the
+preparation of this seminar report. AI assistance was disclosed rather than
+treated as an academic source, and the group remains responsible for the
+accuracy, understanding, and oral defense of every submitted part.
+
+\section{AI Usage Notes}
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+\textbf{Required detail} & \textbf{Disclosure} \\
+\midrule
+Tool, model, and platform & OpenAI Codex, based on GPT-5, accessed through the
+Prism \LaTeX{} editor. \\
+
+Access period & From 10:01 UTC on August 28, 2026, through 09:33 UTC on
+August 29, 2026. The individual access times available from the conversation
+metadata are recorded in the following AI Chat Log. \\
+
+Purposes of use & Organizing the report; converting existing seminar materials
+into a consistent \LaTeX{} document; drafting and revising explanations;
+formatting C++ examples and comparison tables; drawing TikZ UML diagrams;
+checking compliance with \path{Seminar/Requirements.md}; comparing explanations
+with cited references; and diagnosing compilation, typography, and layout
+problems. \\
+
+AI-assisted content & AI produced the initial report structure and substantial
+drafts or revisions of the abstract, introduction, Decorator, Facade, Strategy,
+comparison, conclusion, group-member template, AI disclosure, and prompt log.
+It also generated or edited \LaTeX{}, TikZ, tables, captions, and explanatory
+code excerpts placed in the report. \\
+
+Material supplied independently to AI & The course, class, group, institution,
+member names, student IDs, topic order, and requested changes were supplied by
+the group. The Facade and Strategy reports, presentations, diagrams, and C++
+source files already present under \path{Seminar/} were used as the primary
+project materials rather than generated as new source-code submissions in this
+conversation. \\
+
+Editing and validation & The group directed iterative revisions to scope,
+ordering, terminology, diagrams, and required sections. During preparation, the
+report was checked against the requirements, existing project documents, actual
+C++ implementations, program output, and cited design-pattern references. The
+C++ examples were compiled where applicable, and the final \LaTeX{} document
+was repeatedly compiled and checked for warnings and layout problems. \\
+
+Evidence retained & The next chapter reproduces the available prompts and UTC
+timestamps. The complete Prism conversation history should be exported or
+captured as screenshots and submitted with the report as supporting evidence. \\
+\bottomrule
+\end{tabularx}
+
+\section{Student responsibility statement}
+AI output may contain mistakes and is not cited as authoritative evidence. By
+submitting this report, both members confirm that they have reviewed the final
+text and code, can explain the AI-assisted material, have retained the chat
+history, and have verified factual claims using the project files and references
+listed in this report.
+
+\chapter{AI Chat Log}
+\section{Prompts for Writing Reports}
+The following log records the non-empty user prompts from this report-writing
+conversation. All displayed timestamps are in Coordinated Universal Time (UTC).
+
+\begin{enumerate}
+  \item \textbf{Timestamp:} \verb|2026-08-28 10:01:45.048 UTC|
+  \begin{quote}\itshape
+  I'm doing a Seminar on OOP Design Patterns. The course is called Programming
+  Systems \mbox{-} CS202. The class is 25A02, the group ID is 53. The school is
+  University of Science in HCMC, Vietnam. Edit the \path{main.tex} file to make
+  it a seminar report, following the report content layout in
+  \path{Seminar/Requirements.md}.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-28 10:15:03.700 UTC|
+  \begin{quote}\itshape
+  Read and understand all the content inside \path{Seminar/Facade} folder. Then
+  write and edit the content inside \textquotedbl{}Facade Pattern\textquotedbl{}
+  section.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-28 10:20:36.293 UTC|
+  \begin{quote}\itshape
+  In \path{main.tex}, move the Facade Pattern section before the Strategy Pattern
+  section.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-28 10:33:23.196 UTC|
+  \begin{quote}\itshape
+  In the report PDF, the figure is inserted between the code in the next
+  subsection. Make the diagram appear before the next subsection.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-28 15:41:57.119 UTC|
+  \begin{quote}\itshape
+  One question: Did the \textquotedbl{}Facade Pattern\textquotedbl{} section
+  follow each and every step in the file \path{Requirements.md}?
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-28 15:44:06.001 UTC|
+  \begin{quote}\itshape
+  Add a section detailing about the members of the seminar group. There are 2
+  members, with different roles. Create a template, I'll fill in my own details
+  later.
+  \end{quote}
+
+  \item \textbf{Timestamp: not exposed}
+  \begin{quote}\itshape
+  Fix all warnings and errors in one pass. Use the available editor and
+  diagnostics tools to inspect issues directly. Use the editor tools to apply
+  changes as needed. Do not include patch blocks, diffs, or code fences in your
+  response. Return a short bullet summary of what you changed.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-28 15:54:46.997 UTC|
+  \begin{quote}\itshape
+  Read and understand all the content inside the \path{Seminar/Strategy} folder.
+  Then write and edit the content in the \textquotedbl{}Strategy
+  Pattern\textquotedbl{} section to follow every step in the
+  \path{Requirements.md} file, like the \textquotedbl{}Facade
+  Pattern\textquotedbl{} section.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-29 02:55:00.074 UTC|
+  \begin{quote}\itshape
+  Analyze the content inside \textquotedbl{}Strategy Pattern\textquotedbl{}
+  section and the content in
+  \href{https://refactoring.guru/design-patterns/strategy}{this website}.
+  Analyze the differences between the two.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-29 03:02:19.581 UTC|
+  \begin{quote}\itshape
+  Fix this problem: \textquotedbl{}The statement at \path{main.tex:862} that
+  \textquotedbl{}the pointer \ldots{} is const\textquotedbl{} is imprecise.
+  \texttt{const RouteStrategy*} is a mutable pointer to a const strategy;
+  \texttt{setStrategy} proves that the pointer itself changes.\textquotedbl{}
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-29 03:12:05.253 UTC|
+  \begin{quote}\itshape
+  In the \textquotedbl{}Strategy\textquotedbl{} folder, read and analyze the
+  Mermaid class diagrams in the \path{REPORT.md} file. Then draw the same UML
+  class diagrams in the Strategy section.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-29 03:15:39.421 UTC|
+  \begin{quote}\itshape
+  Removes ONLY the labels on the arrows in the UML class diagrams.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-29 03:18:18.003 UTC|
+  \begin{quote}\itshape
+  In the \textquotedbl{}Facade\textquotedbl{} folder, read and understand the
+  Mermaid class diagrams in the \path{REPORT.md} file. Then draw the same UML
+  class diagrams in the Facade section.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-29 04:12:31.401 UTC|
+  \begin{quote}\itshape
+  Analyze the content inside \textquotedbl{}Facade Pattern\textquotedbl{}
+  section and the content in
+  \href{https://refactoring.guru/design-patterns/facade}{this website}.
+  Analyze the differences between the two.
+  \end{quote}
+
+  \item \textbf{Timestamp:} \verb|2026-08-29 04:18:28.637 UTC|
+  \begin{quote}\itshape
+  Fix these problems in the \textquotedbl{}Facade Pattern\textquotedbl{}
+  section:
+  \begin{itemize}
+    \item The report says the Facade \textquotedbl{}introduces new high-level
+    operations.\textquotedbl{}\\
+    \texttt{Refactoring.Guru} says Facade introduces
+    a new interface but no new subsystem functionality. These are compatible,
+    but \textquotedbl{}new operations that combine existing
+    capabilities\textquotedbl{} would be more precise.
+    \item The UML relationships use the label \texttt{wraps}. Coordinates,
+    uses, or delegates to would distinguish Facade more clearly from Decorator.
+    \item General UML diagram does not show \texttt{Refactoring.Guru}'s
+    explicit \textquotedbl{}Additional Facade\textquotedbl{} participant.
+  \end{itemize}
+  \end{quote}
+\end{enumerate}
+
+\chapter{Member Contribution Record}
+This appendix details the task distribution and workload breakdown for Group 53. Both members contributed equally (50\% / 50\%) across research, implementation, documentation, slide creation, diagram verification, technical demonstration, and oral presentation coordination.
+
+\section{Detailed Task Allocation}
+\begin{table}[htbp]
+\centering
+\caption{Task distribution matrix between Group 53 members.}
+\small
+\begin{tabularx}{\textwidth}{@{}lYYc@{}}
+\toprule
+\textbf{Task Category} & \textbf{Assigned Member} & \textbf{Detailed Work Description} & \textbf{Workload} \\
+\midrule
+Research \& Code & \foreignlanguage{vietnamese}{Từ Hoàng Anh} & Research pattern theory, develop and test C++ implementations. & 50\% \\
+Seminar Coordination & \foreignlanguage{vietnamese}{Từ Hoàng Anh} & Coordinate oral seminar presentation and Q\&A preparation. & 50\% \\
+Report \& Writing & \foreignlanguage{vietnamese}{Nguyễn Phúc Khánh} & Write and structure the \LaTeX{} report, manage references and quizzes. & 50\% \\
+UML \& Tech Demos & \foreignlanguage{vietnamese}{Nguyễn Phúc Khánh} & Verify TikZ UML class diagrams and prepare technical code demonstrations. & 50\% \\
+Slide Deck & \foreignlanguage{vietnamese}{Nguyễn Phúc Khánh} & Design and format presentation slides (PPT). & 50\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Individual Summary Records}
+
+\subsection[Member 1: Tu Hoang Anh (Student ID: 25125005)]{Member 1: \foreignlanguage{vietnamese}{Từ Hoàng Anh} (Student ID: 25125005)}
+\begin{itemize}
+  \item \textbf{Primary Role}: Research and Implementation Lead
+  \item \textbf{Key Responsibilities}:
+    \begin{itemize}
+      \item Researched theoretical foundations of Decorator, Strategy, and Facade patterns.
+      \item Developed and tested clean C++ source code implementations.
+      \item Coordinated the oral seminar presentation flow and Q\&A defense.
+    \end{itemize}
+  \item \textbf{Evaluated Workload}: 50\%
+\end{itemize}
+
+\subsection[Member 2: Nguyen Phuc Khanh (Student ID: 25125086)]{Member 2: \foreignlanguage{vietnamese}{Nguyễn Phúc Khánh} (Student ID: 25125086)}
+\begin{itemize}
+  \item \textbf{Primary Role}: Documentation and Presentation Lead
+  \item \textbf{Key Responsibilities}:
+    \begin{itemize}
+      \item Organized, drafted, and formatted the complete \LaTeX{} seminar report.
+      \item Designed presentation slides (PPT) for oral delivery.
+      \item Verified, adjusted, and validated TikZ UML class diagrams.
+      \item Prepared technical code demonstrations and Multiple Choice Quizzes.
+    \end{itemize}
+  \item \textbf{Evaluated Workload}: 50\%
+\end{itemize}
+
+\begin{thebibliography}{9}
+\addcontentsline{toc}{chapter}{References}
+
+\bibitem{gof}
+E. Gamma, R. Helm, R. Johnson, and J. Vlissides,
+\emph{Design Patterns: Elements of Reusable Object-Oriented Software}.
+Addison-Wesley, 1994.
+
+\bibitem{headfirst}
+E. Freeman and E. Robson,
+\emph{Head First Design Patterns}, 2nd ed.
+O'Reilly Media, 2020.
+
+\bibitem{refactoringguru}
+Refactoring.Guru, ``Strategy Design Pattern''.\newline
+\url{https://refactoring.guru/design-patterns/strategy}
+
+\bibitem{sourcemaking}
+SourceMaking, ``Design Patterns''.\newline
+\url{https://sourcemaking.com/design_patterns}
+
+\bibitem{cpp}
+ISO/IEC, \emph{ISO International Standard ISO/IEC 14882:2020 --- Programming
+Languages --- C++}, 2020.
+
+\end{thebibliography}
+
+\end{document}
